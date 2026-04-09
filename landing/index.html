@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentStore | Download</title>
+  <meta
+    name="description"
+    content="Download AgentStore, a local package manager for AI agent skills. Install and manage packages across Claude Code, Cursor, Copilot, Codex, and OpenCode. CLI and desktop app."
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;700&amp;display=swap"
+    rel="stylesheet"
+  >
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --bg-soft: rgba(255, 255, 255, 0.72);
+      --panel: rgba(255, 252, 247, 0.88);
+      --panel-strong: #fffdf8;
+      --ink: #182126;
+      --muted: #5c6770;
+      --line: rgba(24, 33, 38, 0.12);
+      --accent: #d55d2f;
+      --accent-deep: #ab431d;
+      --accent-soft: rgba(213, 93, 47, 0.12);
+      --teal: #147a75;
+      --gold: #c98b26;
+      --shadow: 0 20px 80px rgba(39, 26, 12, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(213, 93, 47, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(20, 122, 117, 0.14), transparent 28%),
+        linear-gradient(180deg, #f9f4ed 0%, #f2ece3 48%, #eee8de 100%);
+      min-height: 100vh;
+      line-height: 1.55;
+    }
+
+    a { color: inherit; }
+
+    .page-shell {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 28px;
+      padding: 14px 18px;
+      background: var(--bg-soft);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(58, 41, 20, 0.08);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, #f09242 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .brand-copy { display: flex; flex-direction: column; gap: 2px; }
+
+    .brand-name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-meta { font-size: 12px; color: var(--muted); }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link, .nav-button, .cta-primary, .cta-secondary, .download-action {
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .nav-link {
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-link:hover { background: rgba(255, 255, 255, 0.65); color: var(--ink); }
+
+    .nav-button {
+      padding: 11px 16px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 10px 24px rgba(24, 33, 38, 0.18);
+    }
+
+    .nav-button:hover, .cta-primary:hover, .download-action:hover { transform: translateY(-1px); }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-bottom: 28px;
+    }
+
+    .hero-copy, .section-card, .download-card, .step-card, .tool-card {
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy {
+      border-radius: var(--radius-xl);
+      padding: clamp(28px, 5vw, 56px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-copy::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      bottom: -60px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(20, 122, 117, 0.18) 0%, rgba(20, 122, 117, 0) 70%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(213, 93, 47, 0.16);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", sans-serif;
+      letter-spacing: -0.04em;
+      line-height: 1.02;
+    }
+
+    h1 {
+      max-width: 20ch;
+      font-size: clamp(3rem, 7vw, 5.7rem);
+      margin-bottom: 18px;
+    }
+
+    .hero-copy p {
+      max-width: 56ch;
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .cta-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .cta-primary, .cta-secondary, .download-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 999px;
+      font-weight: 800;
+      padding: 15px 20px;
+    }
+
+    .cta-primary, .download-action {
+      background: linear-gradient(135deg, var(--accent) 0%, #ef8d43 100%);
+      color: #fff;
+      box-shadow: 0 16px 30px rgba(213, 93, 47, 0.24);
+    }
+
+    .cta-secondary {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(24, 33, 38, 0.12);
+      color: var(--ink);
+    }
+
+    .downloads-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .download-card {
+      border-radius: 22px;
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+      border: 1px solid rgba(24, 33, 38, 0.08);
+    }
+
+    .download-card.recommended {
+      border-color: rgba(213, 93, 47, 0.42);
+      box-shadow: var(--shadow), 0 0 0 3px rgba(213, 93, 47, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .platform-name { font-size: 24px; }
+
+    .tag {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(24, 33, 38, 0.08);
+      color: var(--ink);
+    }
+
+    .tag.soft { background: rgba(20, 122, 117, 0.12); color: var(--teal); }
+    .tag.warn { background: rgba(201, 139, 38, 0.16); color: #885300; }
+
+    .download-meta, .section-subtitle, .footer-note {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .section-card {
+      border-radius: 28px;
+      padding: 30px;
+      margin-bottom: 28px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .section-head h2 {
+      font-size: clamp(2rem, 3.2vw, 3rem);
+      max-width: 14ch;
+    }
+
+    .steps-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .step-card {
+      border-radius: 22px;
+      padding: 22px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .step-index {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+    }
+
+    .step-card h3, .tool-card h3 { font-size: 22px; }
+
+    .tools-grid { display: grid; gap: 16px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+    .tool-card {
+      border-radius: 20px;
+      padding: 20px 16px;
+      text-align: center;
+      display: grid;
+      gap: 10px;
+    }
+
+    .tool-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin: 0 auto;
+    }
+
+    .cli-section {
+      background: var(--ink);
+      color: #fff;
+      border-radius: var(--radius-xl);
+      padding: 30px;
+      margin-bottom: 28px;
+    }
+
+    .cli-section h2 { color: #fff; margin-bottom: 8px; font-size: clamp(1.8rem, 3vw, 2.6rem); }
+    .cli-section .section-subtitle { color: rgba(255,255,255,0.6); margin-bottom: 22px; }
+
+    .cli-block {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      font-family: "Space Grotesk", monospace;
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.88);
+      overflow-x: auto;
+    }
+
+    .cli-block .cli-comment { color: rgba(255,255,255,0.35); }
+    .cli-block .cli-cmd { color: #ef8d43; }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 14px 4px 0;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.56);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 1024px) {
+      .hero, .downloads-grid, .steps-grid { grid-template-columns: 1fr; }
+      .tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      .page-shell { width: min(var(--max), calc(100% - 20px)); padding-top: 14px; }
+      .site-header { border-radius: 28px; padding: 16px; }
+      .site-header, .section-head, .footer { flex-direction: column; align-items: stretch; }
+      .header-nav { justify-content: flex-start; }
+      h1 { max-width: 12ch; }
+      .hero-copy, .section-card, .cli-section { padding: 22px; }
+      .tools-grid { grid-template-columns: 1fr; }
+      .cta-row { flex-direction: column; }
+      .cta-primary, .cta-secondary, .download-action { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+
+    <header class="site-header">
+      <a class="brand" href="#top">
+        <div class="brand-mark">A</div>
+        <div class="brand-copy">
+          <div class="brand-name">AgentStore</div>
+          <div class="brand-meta">Package manager for agent skills</div>
+        </div>
+      </a>
+      <nav class="header-nav">
+        <a class="nav-link" href="#downloads">Downloads</a>
+        <a class="nav-link" href="#cli">CLI</a>
+        <a class="nav-link" href="#tools">Tools</a>
+        <a class="nav-button" href="https://github.com/jaymoore-research/AgentStore">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Desktop app + CLI</div>
+          <h1>Install agent skills without wrestling GitHub.</h1>
+          <p>
+            AgentStore installs and manages AI agent packages locally. Point it at a GitHub repo,
+            it clones, detects components, and symlinks skills into your tools. No server, no account, no telemetry.
+          </p>
+
+          <div class="cta-row">
+            <a class="cta-primary" id="hero-download" href="https://github.com/jaymoore-research/AgentStore/releases/latest">
+              Download for your platform
+            </a>
+            <a class="cta-secondary" href="#cli">
+              Or use the CLI
+            </a>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <span class="tag soft">Claude Code</span>
+            <span class="tag soft">Cursor</span>
+            <span class="tag soft">Copilot</span>
+            <span class="tag soft">Codex</span>
+            <span class="tag soft">OpenCode</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card" id="downloads">
+        <div class="section-head">
+          <div>
+            <h2>Download the desktop app</h2>
+          </div>
+          <p class="section-subtitle">
+            Pick your platform. No code signing yet, so you will need to bypass Gatekeeper (macOS) or SmartScreen (Windows).
+          </p>
+        </div>
+
+        <div class="downloads-grid">
+          <article class="download-card" data-platform-card="mac">
+            <div class="card-top">
+              <h3 class="platform-name">macOS</h3>
+              <span class="tag soft">Apple Silicon</span>
+            </div>
+            <p class="download-meta">
+              .dmg installer. Right-click &gt; Open on first launch, or run <code>xattr -cr</code> to clear the quarantine flag.
+            </p>
+            <a class="download-action" data-download="mac" href="https://github.com/jaymoore-research/AgentStore/releases/latest">
+              Download .dmg
+            </a>
+          </article>
+
+          <article class="download-card" data-platform-card="windows">
+            <div class="card-top">
+              <h3 class="platform-name">Windows</h3>
+              <span class="tag">Installer</span>
+            </div>
+            <p class="download-meta">
+              NSIS installer. Click "More info" then "Run anyway" on the SmartScreen prompt.
+            </p>
+            <a class="download-action" data-download="windows" href="https://github.com/jaymoore-research/AgentStore/releases/latest">
+              Download .exe
+            </a>
+          </article>
+
+          <article class="download-card" data-platform-card="linux">
+            <div class="card-top">
+              <h3 class="platform-name">Linux</h3>
+              <span class="tag">AppImage</span>
+            </div>
+            <p class="download-meta">
+              AppImage or .deb. No signing needed, works directly. Make it executable and run.
+            </p>
+            <a class="download-action" data-download="linux" href="https://github.com/jaymoore-research/AgentStore/releases/latest">
+              Download AppImage
+            </a>
+          </article>
+        </div>
+      </section>
+
+      <section class="cli-section" id="cli">
+        <h2>Prefer the command line?</h2>
+        <p class="section-subtitle">
+          A single 3 MB binary. No runtime dependencies. Build from source or download from releases.
+        </p>
+        <div class="cli-block">
+          <span class="cli-comment"># Install a package from GitHub</span><br>
+          <span class="cli-cmd">agentstore</span> install anthropics/skills --platform claude,cursor<br><br>
+          <span class="cli-comment"># See what's installed</span><br>
+          <span class="cli-cmd">agentstore</span> list<br><br>
+          <span class="cli-comment"># Update a package</span><br>
+          <span class="cli-cmd">agentstore</span> update skills<br><br>
+          <span class="cli-comment"># Check detected platforms</span><br>
+          <span class="cli-cmd">agentstore</span> platforms<br><br>
+          <span class="cli-comment"># Build from source</span><br>
+          cargo build --release -p agentstore-cli
+        </div>
+      </section>
+
+      <section class="section-card" id="how">
+        <div class="section-head">
+          <div>
+            <h2>How it works</h2>
+          </div>
+          <p class="section-subtitle">
+            Give it a repo. It handles the rest.
+          </p>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card">
+            <div class="step-index">01</div>
+            <h3>Point at a repo</h3>
+            <p class="download-meta">
+              Enter an owner/repo (GUI) or run <code>agentstore install owner/repo</code> (CLI). The repo is cloned locally with a shallow depth-1 fetch.
+            </p>
+          </article>
+
+          <article class="step-card">
+            <div class="step-index">02</div>
+            <h3>Auto-detect components</h3>
+            <p class="download-meta">
+              AgentStore scans the clone for skills, instructions, MCP servers, hooks, and keybindings. It figures out which platforms the package supports.
+            </p>
+          </article>
+
+          <article class="step-card">
+            <div class="step-index">03</div>
+            <h3>Symlink into your tools</h3>
+            <p class="download-meta">
+              One copy on disk, symlinked into Claude Code, Cursor, Copilot, Codex, and OpenCode. Toggle platforms on and off. Updates re-clone and re-link.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-card" id="tools">
+        <div class="section-head">
+          <div>
+            <h2>Supported tools</h2>
+          </div>
+          <p class="section-subtitle">
+            One shared package library, pointed at the tools you use.
+          </p>
+        </div>
+
+        <div class="tools-grid">
+          <article class="tool-card">
+            <div class="tool-dot" style="background: #d97757;"></div>
+            <h3>Claude</h3>
+            <p class="download-meta">Skills, instructions, hooks, and keybindings.</p>
+          </article>
+          <article class="tool-card">
+            <div class="tool-dot" style="background: #6b5ce7;"></div>
+            <h3>Cursor</h3>
+            <p class="download-meta">Rules, skills, and MCP server config.</p>
+          </article>
+          <article class="tool-card">
+            <div class="tool-dot" style="background: #2b6cb0;"></div>
+            <h3>Copilot</h3>
+            <p class="download-meta">Instructions and GitHub-friendly agent content.</p>
+          </article>
+          <article class="tool-card">
+            <div class="tool-dot" style="background: #10a37f;"></div>
+            <h3>Codex</h3>
+            <p class="download-meta">Skills and agent instructions.</p>
+          </article>
+          <article class="tool-card">
+            <div class="tool-dot" style="background: #06b6d4;"></div>
+            <h3>OpenCode</h3>
+            <p class="download-meta">Skills and MCP server configuration.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p class="footer-note">MIT licence. No telemetry. No server. Fully local.</p>
+      <div class="footer-links">
+        <a href="https://github.com/jaymoore-research/AgentStore">Source</a>
+        <a href="https://github.com/jaymoore-research/AgentStore/releases">Releases</a>
+        <a href="https://github.com/jaymoore-research/AgentStore/issues">Issues</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    (function () {
+      var releasesPage = "https://github.com/jaymoore-research/AgentStore/releases/latest";
+      var apiUrl = "https://api.github.com/repos/jaymoore-research/AgentStore/releases/latest";
+
+      var platform = "mac";
+      var ua = navigator.userAgent || "";
+      if (/Win/i.test(ua)) platform = "windows";
+      else if (/Linux/i.test(ua) && !/Android/i.test(ua)) platform = "linux";
+
+      /* Highlight detected platform card */
+      var cards = document.querySelectorAll("[data-platform-card]");
+      cards.forEach(function (card) {
+        if (card.getAttribute("data-platform-card") === platform) {
+          card.classList.add("recommended");
+        }
+      });
+
+      /* Fetch actual asset URLs from latest release */
+      fetch(apiUrl)
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (release) {
+          var assets = release.assets || [];
+          var macAsset = assets.find(function (a) { return /\.dmg$/i.test(a.name); });
+          var winExe = assets.find(function (a) { return /setup\.exe$/i.test(a.name) || /\.exe$/i.test(a.name); });
+          var winMsi = assets.find(function (a) { return /\.msi$/i.test(a.name); });
+          var winAsset = winExe || winMsi;
+          var linuxAsset = assets.find(function (a) { return /\.AppImage$/i.test(a.name); })
+            || assets.find(function (a) { return /\.deb$/i.test(a.name); });
+
+          /* Update download buttons with actual URLs */
+          if (macAsset) {
+            var macBtn = document.querySelector('[data-download="mac"]');
+            if (macBtn) { macBtn.href = macAsset.browser_download_url; macBtn.textContent = "Download " + macAsset.name; }
+          }
+
+          if (winAsset) {
+            var winBtn = document.querySelector('[data-download="windows"]');
+            var winTag = document.querySelector('[data-platform-card="windows"] .tag');
+            if (winBtn) { winBtn.href = winAsset.browser_download_url; winBtn.textContent = "Download " + winAsset.name; }
+            if (winTag) { winTag.textContent = winAsset.name.endsWith(".msi") ? "MSI" : "Installer"; winTag.className = "tag soft"; }
+          }
+
+          if (linuxAsset) {
+            var linBtn = document.querySelector('[data-download="linux"]');
+            var linTag = document.querySelector('[data-platform-card="linux"] .tag');
+            if (linBtn) { linBtn.href = linuxAsset.browser_download_url; linBtn.textContent = "Download " + linuxAsset.name; }
+            if (linTag) { linTag.textContent = linuxAsset.name.endsWith(".deb") ? "Debian" : "AppImage"; linTag.className = "tag soft"; }
+          }
+
+          /* Update hero button for detected platform */
+          var heroBtn = document.getElementById("hero-download");
+          var platformAsset = { mac: macAsset, windows: winAsset, linux: linuxAsset }[platform];
+          if (platformAsset && heroBtn) {
+            heroBtn.href = platformAsset.browser_download_url;
+            var label = { mac: "Download for macOS", windows: "Download for Windows", linux: "Download for Linux" }[platform];
+            heroBtn.textContent = label;
+          }
+        })
+        .catch(function () { /* Keep fallback links to releases page */ });
+    }());
+  </script>
+</body>
+</html>
