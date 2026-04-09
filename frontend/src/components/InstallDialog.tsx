@@ -6,10 +6,11 @@ const PLATFORMS = ["claude", "cursor", "windsurf", "vscode"];
 
 interface Props {
   onClose: () => void;
+  prefillRepo?: string;
 }
 
-export default function InstallDialog({ onClose }: Props) {
-  const [repoInput, setRepoInput] = useState("");
+export default function InstallDialog({ onClose, prefillRepo }: Props) {
+  const [repoInput, setRepoInput] = useState(prefillRepo ?? "");
   const [scope, setScope] = useState<"profile" | "project">("profile");
   const [projectPath, setProjectPath] = useState("");
   const [platformAvailable, setPlatformAvailable] = useState<Record<string, boolean>>({});

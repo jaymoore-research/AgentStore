@@ -1,4 +1,4 @@
-# AgentStore Lite
+# AgentStore
 
 A local package manager for AI coding agent skills. No server, no registry, no telemetry.
 
@@ -6,7 +6,7 @@ Installs skill packages from GitHub repositories and manages symlinks across Cla
 
 ## What it is
 
-**AgentStore Lite** provides two interfaces:
+**AgentStore** provides two interfaces:
 
 - **CLI binary** for scripted and command-line installation
 - **GUI desktop app** (Tauri) for graphical management
@@ -61,7 +61,7 @@ The built app goes to `src-tauri/target/release/bundle/`.
 No code signing. To run the app:
 
 - Right-click > Open in Finder, or
-- Run `xattr -cr /path/to/AgentStore\ Lite.app` to remove quarantine attributes
+- Run `xattr -cr /path/to/AgentStore.app` to remove quarantine attributes
 
 ### Windows
 
