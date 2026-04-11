@@ -107,7 +107,8 @@ pub fn enable_platform(
     // Link skills directory contents
     let source_skills = package_dir.join(&platform.skills_dir);
     if source_skills.is_dir() {
-        let target_dir = resolve_path(&platform, "skills_dir", &scope_root).unwrap();
+        let target_dir = resolve_path(&platform, "skills_dir", &scope_root)
+            .ok_or_else(|| anyhow::anyhow!("Cannot resolve skills directory for platform {}", platform_id))?;
         fs::create_dir_all(&target_dir)?;
 
         for entry in fs::read_dir(&source_skills)?.flatten() {
@@ -156,7 +157,8 @@ pub fn enable_platform(
         if alt_path.is_dir() && *alt != platform.skills_dir {
             // Cross-platform: if package has skills for another platform,
             // link them to this platform's skills dir too
-            let target_dir = resolve_path(&platform, "skills_dir", &scope_root).unwrap();
+            let target_dir = resolve_path(&platform, "skills_dir", &scope_root)
+                .ok_or_else(|| anyhow::anyhow!("Cannot resolve skills directory for platform {}", platform_id))?;
             fs::create_dir_all(&target_dir)?;
 
             for entry in fs::read_dir(&alt_path)?.flatten() {
