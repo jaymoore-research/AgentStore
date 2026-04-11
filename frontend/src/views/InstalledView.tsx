@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { PackageManifest, InstallProgress } from "../types";
 
 const ALL_PLATFORMS = ["claude", "codex", "copilot", "gemini", "cursor", "opencode", "vscode"];
@@ -18,16 +19,28 @@ export default function InstalledView() {
   const [docModal, setDocModal] = useState<{ title: string; content: string } | null>(null);
   const [settingsModal, setSettingsModal] = useState<PackageManifest | null>(null);
   const [uninstalling, setUninstalling] = useState<string | null>(null);
-  const [scopeChanging, setScopeChanging] = useState(false);
+  const [updatesAvailable, setUpdatesAvailable] = useState<Set<string>>(new Set());
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [settingsView, setSettingsView] = useState<"main" | "instructions">("main");
+  const [settingsInstructions, setSettingsInstructions] = useState<string>("");
+  const [skillFilter, setSkillFilter] = useState<Record<string, string>>({});
+
+  // Use a ref to track the open settings modal name so loadPackages
+  // can sync it without creating a dependency cycle.
+  const settingsNameRef = useRef<string | null>(null);
+  useEffect(() => {
+    settingsNameRef.current = settingsModal?.name ?? null;
+  }, [settingsModal]);
 
   const loadPackages = useCallback(async () => {
     try {
       const pkgs = await invoke<PackageManifest[]>("list_packages");
       setPackages(pkgs);
       setError(null);
-      // Keep settings modal in sync
-      if (settingsModal) {
-        const updated = pkgs.find((p) => p.name === settingsModal.name);
+      // Sync settings modal if one is open
+      const modalName = settingsNameRef.current;
+      if (modalName) {
+        const updated = pkgs.find((p) => p.name === modalName);
         if (updated) setSettingsModal(updated);
         else setSettingsModal(null);
       }
@@ -36,36 +49,68 @@ export default function InstalledView() {
     } finally {
       setLoading(false);
     }
-  }, [settingsModal]);
+  }, []);
+
+  const checkUpdates = useCallback(async () => {
+    setCheckingUpdates(true);
+    try {
+      const names = await invoke<string[]>("check_for_updates");
+      setUpdatesAvailable(new Set(names));
+    } catch {
+      // Network unavailable or other error
+    } finally {
+      setCheckingUpdates(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadPackages();
+    checkUpdates();
 
     const unlisten = listen<InstallProgress>("install-progress", (event) => {
       if (event.payload.progress >= 1.0) {
-        setTimeout(() => loadPackages(), 2100);
+        setTimeout(() => {
+          loadPackages();
+          checkUpdates();
+        }, 2100);
       }
     });
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, [loadPackages]);
+  }, [loadPackages, checkUpdates]);
 
   async function handleToggle(
     name: string,
     platformId: string,
     currentlyEnabled: boolean,
-    scope: string,
-    projectPath: string | null
   ) {
     try {
       await invoke("toggle_platform", {
         name,
         platformId,
         enable: !currentlyEnabled,
-        scope,
-        projectPath,
+        scope: "profile",
+        projectPath: null,
       });
+      await loadPackages();
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+
+  async function handleToggleProfile(pkgName: string, enable: boolean) {
+    try {
+      // Toggle profile for all enabled platforms
+      for (const pid of Object.keys(
+        packages.find((p) => p.name === pkgName)?.enabled ?? {}
+      )) {
+        await invoke("toggle_profile", {
+          name: pkgName,
+          platformId: pid,
+          enable,
+        });
+      }
       await loadPackages();
     } catch (e) {
       setError(String(e));
@@ -76,6 +121,11 @@ export default function InstalledView() {
     setUpdating(name);
     try {
       await invoke<PackageManifest>("update_package", { name });
+      setUpdatesAvailable((prev) => {
+        const next = new Set(prev);
+        next.delete(name);
+        return next;
+      });
       await loadPackages();
     } catch (e) {
       setError(String(e));
@@ -98,34 +148,34 @@ export default function InstalledView() {
     }
   }
 
-  async function handleScopeChange(pkg: PackageManifest, newScope: string, projectPath: string | null) {
-    setScopeChanging(true);
+  async function handleAddProject(pkgName: string) {
     try {
-      const enabledPlatforms = Object.keys(pkg.enabled);
-      // Disable all, then re-enable with new scope
-      for (const pid of enabledPlatforms) {
-        await invoke("toggle_platform", {
-          name: pkg.name,
-          platformId: pid,
-          enable: false,
-          scope: "profile",
-          projectPath: null,
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: "Select project directory",
+      });
+      if (selected) {
+        await invoke("add_project_dir", {
+          name: pkgName,
+          projectPath: selected as string,
         });
+        await loadPackages();
       }
-      for (const pid of enabledPlatforms) {
-        await invoke("toggle_platform", {
-          name: pkg.name,
-          platformId: pid,
-          enable: true,
-          scope: newScope,
-          projectPath,
-        });
-      }
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+
+  async function handleRemoveProject(pkgName: string, projectPath: string) {
+    try {
+      await invoke("remove_project_dir", {
+        name: pkgName,
+        projectPath,
+      });
       await loadPackages();
     } catch (e) {
       setError(String(e));
-    } finally {
-      setScopeChanging(false);
     }
   }
 
@@ -170,11 +220,38 @@ export default function InstalledView() {
     });
   }
 
+  // Check if profile is enabled for any platform on this package
+  function isProfileEnabled(pkg: PackageManifest): boolean {
+    return Object.values(pkg.enabled).some((s) => s.profile);
+  }
+
+  // Collect unique project paths across all enabled platforms for a package
+  function getProjects(pkg: PackageManifest): string[] {
+    const all = new Set<string>();
+    for (const state of Object.values(pkg.enabled)) {
+      for (const p of state.projects) {
+        all.add(p);
+      }
+    }
+    return [...all];
+  }
+
   if (loading) return <div className="view-loading">Loading packages...</div>;
 
   return (
     <div className="view">
-      <h2 className="view-title">Installed Packages</h2>
+      <div className="view-title-row">
+        <h2 className="view-title">Installed Packages</h2>
+        {packages.length > 0 && (
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={checkUpdates}
+            disabled={checkingUpdates}
+          >
+            {checkingUpdates ? "Checking..." : "Check for updates"}
+          </button>
+        )}
+      </div>
       {error && <p className="form-error">{error}</p>}
       {packages.length === 0 ? (
         <p className="empty-state">
@@ -198,16 +275,18 @@ export default function InstalledView() {
                   {pkg.description && <p className="package-desc">{pkg.description}</p>}
                 </div>
                 <div className="package-actions">
+                  {updatesAvailable.has(pkg.name) && (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleUpdate(pkg.name)}
+                      disabled={updating === pkg.name}
+                    >
+                      {updating === pkg.name ? "Updating..." : "Update available"}
+                    </button>
+                  )}
                   <button
                     className="btn btn-secondary"
-                    onClick={() => handleUpdate(pkg.name)}
-                    disabled={updating === pkg.name}
-                  >
-                    {updating === pkg.name ? "Updating..." : "Update"}
-                  </button>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setSettingsModal(pkg)}
+                    onClick={() => { setSettingsView("main"); setSettingsModal(pkg); }}
                   >
                     Settings
                   </button>
@@ -244,23 +323,42 @@ export default function InstalledView() {
                 {pkg.components.hooks.length > 0 && (
                   <span className="meta-tag">Hooks: {pkg.components.hooks.length}</span>
                 )}
-                <span className="meta-tag">
-                  {Object.keys(pkg.enabled).length} platform
-                  {Object.keys(pkg.enabled).length !== 1 ? "s" : ""} enabled
-                </span>
+                {Object.keys(pkg.enabled).map((pid) => (
+                  <span key={pid} className="meta-tag">{pid}</span>
+                ))}
               </div>
 
               {expanded.has(pkg.name) && pkg.components.skills.length > 0 && (
-                <div className="skills-list">
-                  {pkg.components.skills.map((skill) => (
-                    <button
-                      key={skill}
-                      className="skill-chip skill-chip-interactive"
-                      onClick={() => showSkillDoc(pkg.name, skill)}
-                    >
-                      {skill}
-                    </button>
-                  ))}
+                <div className="skills-dropdown">
+                  {pkg.components.skills.length > 10 && (
+                    <input
+                      className="skills-search"
+                      type="text"
+                      placeholder="Search skills..."
+                      value={skillFilter[pkg.name] || ""}
+                      onChange={(e) => setSkillFilter((prev) => ({ ...prev, [pkg.name]: e.target.value }))}
+                    />
+                  )}
+                  <div className="skills-list">
+                    {pkg.components.skills
+                      .filter((s) => {
+                        const q = (skillFilter[pkg.name] || "").toLowerCase();
+                        if (!q) return true;
+                        return s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q);
+                      })
+                      .map((skill) => (
+                        <button
+                          key={skill.name}
+                          className="skill-item"
+                          onClick={() => showSkillDoc(pkg.name, skill.name)}
+                        >
+                          <span className="skill-item-name">{skill.name}</span>
+                          {skill.description && (
+                            <span className="skill-item-desc">{skill.description}</span>
+                          )}
+                        </button>
+                      ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -282,7 +380,7 @@ export default function InstalledView() {
               </button>
             </div>
             <div className="doc-modal-content markdown-body">
-              <Markdown>{docModal.content}</Markdown>
+              <Markdown remarkPlugins={[remarkGfm]}>{docModal.content}</Markdown>
             </div>
           </div>
         </div>
@@ -294,147 +392,156 @@ export default function InstalledView() {
           className="dialog-overlay"
           onClick={(e) => e.target === e.currentTarget && setSettingsModal(null)}
         >
-          <div className="dialog" style={{ maxWidth: 520 }}>
-            <h2 className="dialog-title">{settingsModal.name} Settings</h2>
+          <div className="dialog settings-dialog" style={{ maxWidth: 520 }}>
+            {settingsView === "instructions" ? (
+              <>
+                <div className="dialog-title-row">
+                  <button className="btn-back" onClick={() => setSettingsView("main")}>
+                    &larr;
+                  </button>
+                  <h2 className="dialog-title">Instructions</h2>
+                </div>
+                <div className="settings-dialog-body markdown-body">
+                  <Markdown remarkPlugins={[remarkGfm]}>{settingsInstructions}</Markdown>
+                </div>
+                <div className="settings-dialog-footer">
+                  <button className="btn btn-secondary" onClick={() => setSettingsView("main")}>
+                    Back
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="dialog-title">{settingsModal.name} Settings</h2>
 
-            <section style={{ marginBottom: 20 }}>
-              <h4 className="settings-section-title" style={{ marginBottom: 8 }}>
-                Platforms
-              </h4>
-              <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: "0 0 10px" }}>
-                Toggle which platforms this package is enabled for.
-              </p>
-              <div className="platform-checks">
-                {ALL_PLATFORMS.map((pid) => {
-                  const state = settingsModal.enabled[pid];
-                  const enabled = !!state;
-                  return (
-                    <label key={pid} className="platform-check-label">
+                <div className="settings-dialog-body">
+                  <section style={{ marginBottom: 20 }}>
+                    <h4 className="settings-section-title" style={{ marginBottom: 8 }}>
+                      Platforms
+                    </h4>
+                    <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: "0 0 10px" }}>
+                      Toggle which platforms this package is enabled for.
+                    </p>
+                    <div className="platform-checks">
+                      {ALL_PLATFORMS.map((pid) => {
+                        const state = settingsModal.enabled[pid];
+                        const enabled = !!state;
+                        return (
+                          <label key={pid} className="platform-check-label">
+                            <input
+                              type="checkbox"
+                              checked={enabled}
+                              onChange={() => handleToggle(settingsModal.name, pid, enabled)}
+                            />
+                            {pid}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  <section style={{ marginBottom: 20 }}>
+                    <h4 className="settings-section-title" style={{ marginBottom: 8 }}>
+                      Scope
+                    </h4>
+                    <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: "0 0 10px" }}>
+                      Where this package is available. Enable globally, in specific projects, or both.
+                    </p>
+
+                    <label className="profile-toggle">
                       <input
                         type="checkbox"
-                        checked={enabled}
-                        onChange={() =>
-                          handleToggle(
-                            settingsModal.name,
-                            pid,
-                            enabled,
-                            state?.scope ?? "profile",
-                            state?.project_path ?? null
-                          )
-                        }
+                        checked={isProfileEnabled(settingsModal)}
+                        disabled={Object.keys(settingsModal.enabled).length === 0}
+                        onChange={(e) => handleToggleProfile(settingsModal.name, e.target.checked)}
                       />
-                      {pid}
+                      <span>Profile (~)</span>
+                      <span style={{ fontSize: 11, color: "var(--text-tertiary)", marginLeft: 4 }}>
+                        Available globally
+                      </span>
                     </label>
-                  );
-                })}
-              </div>
-            </section>
 
-            <section style={{ marginBottom: 20 }}>
-              <h4 className="settings-section-title" style={{ marginBottom: 8 }}>
-                Scope
-              </h4>
-              <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: "0 0 10px" }}>
-                Where symlinks are created. Profile installs globally; project installs to a specific directory.
-              </p>
-              {(() => {
-                const first = Object.values(settingsModal.enabled)[0];
-                const currentScope = first?.scope ?? "profile";
-                const currentProject = first?.project_path ?? "";
-                return (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        className={`btn btn-sm ${currentScope === "profile" ? "btn-primary" : "btn-secondary"}`}
-                        disabled={scopeChanging || Object.keys(settingsModal.enabled).length === 0}
-                        onClick={() => {
-                          if (currentScope !== "profile") {
-                            handleScopeChange(settingsModal, "profile", null);
-                          }
-                        }}
-                      >
-                        Profile (~)
-                      </button>
-                      <button
-                        className={`btn btn-sm ${currentScope === "project" ? "btn-primary" : "btn-secondary"}`}
-                        disabled={scopeChanging || Object.keys(settingsModal.enabled).length === 0}
-                        onClick={async () => {
-                          const selected = await open({
-                            directory: true,
-                            multiple: false,
-                            title: "Select project directory",
-                            defaultPath: currentProject || undefined,
-                          });
-                          if (selected) {
-                            handleScopeChange(settingsModal, "project", selected as string);
-                          }
-                        }}
-                      >
-                        Project
-                      </button>
+                    {(() => {
+                      const projects = getProjects(settingsModal);
+                      return (
+                        <div className="project-list" style={{ marginTop: 10 }}>
+                          {projects.map((projectPath) => (
+                            <div key={projectPath} className="project-entry">
+                              <code className="project-path">{projectPath}</code>
+                              <button
+                                className="project-remove"
+                                onClick={() => handleRemoveProject(settingsModal.name, projectPath)}
+                                title="Remove from this project"
+                              >
+                                &times;
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleAddProject(settingsModal.name)}
+                            disabled={Object.keys(settingsModal.enabled).length === 0}
+                          >
+                            + Add project
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </section>
+
+                  <section style={{ marginBottom: 20 }}>
+                    <h4 className="settings-section-title" style={{ marginBottom: 8 }}>
+                      Components
+                    </h4>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {settingsModal.components.skills.length > 0 && (
+                        <span className="meta-tag">
+                          {settingsModal.components.skills.length} skill
+                          {settingsModal.components.skills.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {settingsModal.components.mcp_servers.length > 0 && (
+                        <span className="meta-tag">
+                          {settingsModal.components.mcp_servers.length} MCP server
+                          {settingsModal.components.mcp_servers.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {settingsModal.components.instructions && (
+                        <button
+                          className="meta-tag meta-tag-interactive"
+                          onClick={async () => {
+                            const parts: string[] = [];
+                            for (const file of INSTRUCTION_FILES) {
+                              try {
+                                const content = await invoke<string>("read_package_file", { name: settingsModal.name, relPath: file });
+                                parts.push(`## ${file}\n\n${content}`);
+                              } catch { /* skip */ }
+                            }
+                            setSettingsInstructions(parts.length > 0 ? parts.join("\n\n---\n\n") : "No instruction files found.");
+                            setSettingsView("instructions");
+                          }}
+                        >
+                          View instructions
+                        </button>
+                      )}
                     </div>
-                    {currentScope === "project" && currentProject && (
-                      <code style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{currentProject}</code>
-                    )}
-                    {scopeChanging && (
-                      <span style={{ fontSize: 11, color: "var(--accent)" }}>Changing scope...</span>
-                    )}
-                  </div>
-                );
-              })()}
-            </section>
+                  </section>
+                </div>
 
-            <section style={{ marginBottom: 20 }}>
-              <h4 className="settings-section-title" style={{ marginBottom: 8 }}>
-                Components
-              </h4>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {settingsModal.components.skills.length > 0 && (
-                  <span className="meta-tag">
-                    {settingsModal.components.skills.length} skill
-                    {settingsModal.components.skills.length !== 1 ? "s" : ""}
-                  </span>
-                )}
-                {settingsModal.components.mcp_servers.length > 0 && (
-                  <span className="meta-tag">
-                    {settingsModal.components.mcp_servers.length} MCP server
-                    {settingsModal.components.mcp_servers.length !== 1 ? "s" : ""}
-                  </span>
-                )}
-                {settingsModal.components.instructions && (
+                <div className="settings-dialog-footer">
                   <button
-                    className="meta-tag meta-tag-interactive"
-                    onClick={() => {
-                      setSettingsModal(null);
-                      showInstructions(settingsModal.name);
-                    }}
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleUninstall(settingsModal.name)}
+                    disabled={uninstalling === settingsModal.name}
                   >
-                    View instructions
+                    {uninstalling === settingsModal.name ? "Removing..." : "Uninstall"}
                   </button>
-                )}
-              </div>
-            </section>
-
-            <div
-              style={{
-                borderTop: "1px solid var(--border-subtle)",
-                paddingTop: 16,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <button
-                className="btn btn-danger btn-sm"
-                onClick={() => handleUninstall(settingsModal.name)}
-                disabled={uninstalling === settingsModal.name}
-              >
-                {uninstalling === settingsModal.name ? "Removing..." : "Uninstall"}
-              </button>
-              <button className="btn btn-secondary" onClick={() => setSettingsModal(null)}>
-                Done
-              </button>
-            </div>
+                  <button className="btn btn-secondary" onClick={() => setSettingsModal(null)}>
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

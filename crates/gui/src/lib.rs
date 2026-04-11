@@ -143,6 +143,31 @@ fn get_package_info(name: String, paths: State<AppPaths>) -> Result<PackageManif
 }
 
 #[tauri::command]
+fn toggle_profile(name: String, platform_id: String, enable: bool, paths: State<AppPaths>) -> Result<(), String> {
+    packages::toggle_profile(&paths, &name, &platform_id, enable).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn add_project_dir(name: String, project_path: String, paths: State<AppPaths>) -> Result<(), String> {
+    packages::add_project_dir(&paths, &name, &project_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn remove_project_dir(name: String, project_path: String, paths: State<AppPaths>) -> Result<(), String> {
+    packages::remove_project_dir(&paths, &name, &project_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn check_for_updates(paths: State<'_, AppPaths>) -> Result<Vec<String>, String> {
+    let paths = paths.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        packages::check_for_updates(&paths).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 fn read_package_file(name: String, rel_path: String, paths: State<AppPaths>) -> Result<String, String> {
     packages::validate_name(&name, "name").map_err(|e| e.to_string())?;
     // Prevent path traversal in rel_path
@@ -182,6 +207,10 @@ pub fn run() {
             list_packages,
             toggle_platform,
             update_package,
+            toggle_profile,
+            add_project_dir,
+            remove_project_dir,
+            check_for_updates,
             get_package_info,
             read_package_file,
             scan_installed_skills,

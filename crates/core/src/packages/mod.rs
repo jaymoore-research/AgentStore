@@ -27,19 +27,131 @@ pub struct PackageManifest {
     pub components: PackageComponents,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PlatformState {
-    pub scope: String, // "profile" or "project"
-    pub project_path: Option<String>,
+    pub profile: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub projects: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Custom deserializer to handle both old format (scope/project_path)
+/// and new format (profile/projects).
+impl<'de> serde::Deserialize<'de> for PlatformState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Raw {
+            #[serde(default)]
+            profile: Option<bool>,
+            #[serde(default)]
+            projects: Option<Vec<String>>,
+            // Legacy fields
+            #[serde(default)]
+            scope: Option<String>,
+            #[serde(default)]
+            project_path: Option<String>,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+
+        if raw.profile.is_some() || raw.projects.is_some() {
+            Ok(PlatformState {
+                profile: raw.profile.unwrap_or(true),
+                projects: raw.projects.unwrap_or_default(),
+            })
+        } else {
+            // Migrate from legacy format
+            match raw.scope.as_deref() {
+                Some("project") => Ok(PlatformState {
+                    profile: false,
+                    projects: raw.project_path.into_iter().collect(),
+                }),
+                _ => Ok(PlatformState {
+                    profile: true,
+                    projects: vec![],
+                }),
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct PackageComponents {
-    pub skills: Vec<String>,
+    pub skills: Vec<analyser::SkillInfo>,
     pub mcp_servers: Vec<String>,
     pub instructions: bool,
     pub hooks: Vec<String>,
     pub keybindings: Vec<String>,
+}
+
+/// Custom deserializer to handle both old format (skills as Vec<String>)
+/// and new format (skills as Vec<SkillInfo>).
+impl<'de> serde::Deserialize<'de> for PackageComponents {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde_json::Value;
+
+        let mut map = serde_json::Map::deserialize(deserializer)?;
+
+        // Handle skills field: either Vec<String> (old) or Vec<SkillInfo> (new)
+        let skills = match map.remove("skills") {
+            Some(Value::Array(arr)) => {
+                let mut result = Vec::new();
+                for item in arr {
+                    match item {
+                        Value::String(name) => {
+                            // Old format: just a skill name string
+                            result.push(analyser::SkillInfo {
+                                name,
+                                description: String::new(),
+                                file_path: String::new(),
+                                size_bytes: 0,
+                                has_frontmatter: false,
+                            });
+                        }
+                        Value::Object(_) => {
+                            // New format: full SkillInfo object
+                            let info: analyser::SkillInfo =
+                                serde_json::from_value(item).map_err(serde::de::Error::custom)?;
+                            result.push(info);
+                        }
+                        _ => {}
+                    }
+                }
+                result
+            }
+            _ => Vec::new(),
+        };
+
+        let mcp_servers = map
+            .remove("mcp_servers")
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default();
+        let instructions = map
+            .remove("instructions")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let hooks = map
+            .remove("hooks")
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default();
+        let keybindings = map
+            .remove("keybindings")
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default();
+
+        Ok(PackageComponents {
+            skills,
+            mcp_servers,
+            instructions,
+            hooks,
+            keybindings,
+        })
+    }
 }
 
 /// Validate that a GitHub owner or repo name contains only safe characters.
@@ -138,6 +250,8 @@ pub fn install_package(
 
     let proj_path = project_path.map(std::path::PathBuf::from);
 
+    let is_profile = scope == "profile";
+
     for platform_id in enable_platforms {
         if detected.platforms.contains(platform_id) || detected.is_apm {
             let result = symlinker::enable_platform(
@@ -154,8 +268,12 @@ pub fn install_package(
                     enabled.insert(
                         platform_id.clone(),
                         PlatformState {
-                            scope: scope.to_string(),
-                            project_path: project_path.map(|s| s.to_string()),
+                            profile: is_profile,
+                            projects: if is_profile {
+                                vec![]
+                            } else {
+                                project_path.iter().map(|s| s.to_string()).collect()
+                            },
                         },
                     );
                 }
@@ -170,7 +288,7 @@ pub fn install_package(
             {
                 let source_instr = repo_dir.join(instr_file);
                 if source_instr.exists() {
-                    let scope_root = if scope == "profile" {
+                    let scope_root = if is_profile {
                         dirs::home_dir()
                             .ok_or_else(|| anyhow::anyhow!("Cannot determine home directory"))?
                     } else {
@@ -187,8 +305,10 @@ pub fn install_package(
         }
     }
 
-    // Step 5: Write manifest
+    // Step 5: Analyse skills for descriptions
     on_progress("Finalising", "Writing manifest...", 0.9);
+    let analysis = analyser::analyse_repo(&repo_dir);
+
     let manifest = PackageManifest {
         name: name.to_string(),
         repo: format!("{}/{}", owner, name),
@@ -198,7 +318,7 @@ pub fn install_package(
         supports: detected.platforms,
         enabled,
         components: PackageComponents {
-            skills: detected.skills,
+            skills: analysis.skills,
             mcp_servers: detected.mcp_servers,
             instructions: detected.has_instructions,
             hooks: vec![],
@@ -270,14 +390,13 @@ pub fn toggle_platform(
     name: &str,
     platform_id: &str,
     enable: bool,
-    scope: &str,
-    project_path: Option<&str>,
+    _scope: &str,
+    _project_path: Option<&str>,
 ) -> Result<()> {
     validate_name(name, "name")?;
     validate_name(platform_id, "platform")?;
     let package_dir = paths.packages_dir.join(name);
     let state_path = paths.packages_dir.join("state.json");
-    let repo_dir = package_dir.join("repo");
     let manifest_path = package_dir.join("manifest.json");
 
     if !manifest_path.exists() {
@@ -288,52 +407,23 @@ pub fn toggle_platform(
         serde_json::from_str(&fs::read_to_string(&manifest_path)?)?;
 
     if enable {
-        let proj_path = project_path.map(std::path::PathBuf::from);
-        symlinker::enable_platform(
-            name,
-            &repo_dir,
-            platform_id,
-            scope,
-            proj_path.as_deref(),
-            &state_path,
-        )?;
-
-        manifest.enabled.insert(
-            platform_id.to_string(),
-            PlatformState {
-                scope: scope.to_string(),
-                project_path: project_path.map(|s| s.to_string()),
-            },
-        );
-
-        // Inject instructions
-        if let Some(platform) = platforms::get_platform(platform_id) {
-            if let Some(ref instr_file) = platform.instructions_file {
-                let source = repo_dir.join(instr_file);
-                if source.exists() {
-                    let scope_root = if manifest.enabled[platform_id].scope == "profile" {
-                        dirs::home_dir()
-                            .ok_or_else(|| anyhow::anyhow!("Cannot determine home directory"))?
-                    } else {
-                        std::path::PathBuf::from(
-                            manifest.enabled[platform_id]
-                                .project_path
-                                .as_deref()
-                                .unwrap_or("."),
-                        )
-                    };
-                    let target = scope_root.join(instr_file);
-                    if let Ok(content) = fs::read_to_string(&source) {
-                        let _ = injector::inject_instructions(&target, name, &content);
-                    }
-                }
-            }
+        // If platform wasn't previously enabled, create an entry with profile off by default.
+        // The user controls profile via toggle_profile separately.
+        if !manifest.enabled.contains_key(platform_id) {
+            manifest.enabled.insert(
+                platform_id.to_string(),
+                PlatformState {
+                    profile: false,
+                    projects: vec![],
+                },
+            );
         }
     } else {
+        // Disable: remove all symlinks for this platform (profile + projects)
         symlinker::disable_platform(name, platform_id, &state_path)?;
         manifest.enabled.remove(platform_id);
 
-        // Remove instructions
+        // Remove injected instructions
         if let Some(platform) = platforms::get_platform(platform_id) {
             if let Some(ref instr_file) = platform.instructions_file {
                 if let Some(home) = dirs::home_dir() {
@@ -392,22 +482,35 @@ pub fn update_package(
     // Re-enable for previously enabled platforms
     on_progress("Enabling", "Updating symlinks...", 0.7);
     for (platform_id, state) in &old_manifest.enabled {
-        let proj_path = state
-            .project_path
-            .as_ref()
-            .map(|p| std::path::PathBuf::from(p));
-        let _ = symlinker::enable_platform(
-            name,
-            &repo_dir,
-            platform_id,
-            &state.scope,
-            proj_path.as_deref(),
-            &state_path,
-        );
+        // Re-enable at profile level if it was enabled there
+        if state.profile {
+            let _ = symlinker::enable_platform(
+                name,
+                &repo_dir,
+                platform_id,
+                "profile",
+                None,
+                &state_path,
+            );
+        }
+        // Re-enable for each project directory
+        for project_path in &state.projects {
+            let proj = std::path::PathBuf::from(project_path);
+            let _ = symlinker::enable_platform(
+                name,
+                &repo_dir,
+                platform_id,
+                "project",
+                Some(proj.as_path()),
+                &state_path,
+            );
+        }
     }
 
     // Write updated manifest
     on_progress("Finalising", "Writing manifest...", 0.9);
+    let analysis = analyser::analyse_repo(&repo_dir);
+
     let manifest = PackageManifest {
         name: name.to_string(),
         repo: old_manifest.repo,
@@ -417,7 +520,7 @@ pub fn update_package(
         supports: detected.platforms,
         enabled: old_manifest.enabled,
         components: PackageComponents {
-            skills: detected.skills,
+            skills: analysis.skills,
             mcp_servers: detected.mcp_servers,
             instructions: detected.has_instructions,
             hooks: vec![],
@@ -430,6 +533,197 @@ pub fn update_package(
 
     on_progress("Done", "Package updated!", 1.0);
     Ok(manifest)
+}
+
+/// Add a project directory to an installed package.
+/// Creates symlinks for all enabled platforms in the given project directory.
+pub fn add_project_dir(paths: &AppPaths, name: &str, project_path: &str) -> Result<()> {
+    validate_name(name, "name")?;
+    let package_dir = paths.packages_dir.join(name);
+    let state_path = paths.packages_dir.join("state.json");
+    let repo_dir = package_dir.join("repo");
+    let manifest_path = package_dir.join("manifest.json");
+
+    if !manifest_path.exists() {
+        anyhow::bail!("Package not found");
+    }
+
+    let mut manifest: PackageManifest =
+        serde_json::from_str(&fs::read_to_string(&manifest_path)?)?;
+
+    let proj = std::path::PathBuf::from(project_path);
+    if !proj.is_dir() {
+        anyhow::bail!("Directory does not exist: {}", project_path);
+    }
+
+    // Create symlinks for each enabled platform in this project directory
+    for platform_id in manifest.enabled.keys().cloned().collect::<Vec<_>>() {
+        let _ = symlinker::enable_platform(
+            name,
+            &repo_dir,
+            &platform_id,
+            "project",
+            Some(&proj),
+            &state_path,
+        );
+
+        // Inject instructions into the project
+        if let Some(platform) = platforms::get_platform(&platform_id) {
+            if let Some(ref instr_file) = platform.instructions_file {
+                let source = repo_dir.join(instr_file);
+                if source.exists() {
+                    let target = proj.join(instr_file);
+                    if let Ok(content) = fs::read_to_string(&source) {
+                        let _ = injector::inject_instructions(&target, name, &content);
+                    }
+                }
+            }
+        }
+    }
+
+    // Add to projects list for all enabled platforms
+    for state in manifest.enabled.values_mut() {
+        if !state.projects.contains(&project_path.to_string()) {
+            state.projects.push(project_path.to_string());
+        }
+    }
+
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&manifest_path, json)?;
+
+    Ok(())
+}
+
+/// Remove a project directory from an installed package.
+/// Removes symlinks for all platforms from the given project directory.
+pub fn remove_project_dir(paths: &AppPaths, name: &str, project_path: &str) -> Result<()> {
+    validate_name(name, "name")?;
+    let package_dir = paths.packages_dir.join(name);
+    let state_path = paths.packages_dir.join("state.json");
+    let manifest_path = package_dir.join("manifest.json");
+
+    if !manifest_path.exists() {
+        anyhow::bail!("Package not found");
+    }
+
+    let mut manifest: PackageManifest =
+        serde_json::from_str(&fs::read_to_string(&manifest_path)?)?;
+
+    let proj = std::path::Path::new(project_path);
+
+    // Remove symlinks for each enabled platform under this project path
+    for platform_id in manifest.enabled.keys().cloned().collect::<Vec<_>>() {
+        let _ = symlinker::disable_platform_scope(name, &platform_id, proj, &state_path);
+
+        // Remove injected instructions from this project
+        if let Some(platform) = platforms::get_platform(&platform_id) {
+            if let Some(ref instr_file) = platform.instructions_file {
+                let target = proj.join(instr_file);
+                let _ = injector::remove_instructions(&target, name);
+            }
+        }
+    }
+
+    // Remove from projects list for all enabled platforms
+    for state in manifest.enabled.values_mut() {
+        state.projects.retain(|p| p != project_path);
+    }
+
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&manifest_path, json)?;
+
+    Ok(())
+}
+
+/// Toggle profile scope for a specific platform on an installed package.
+pub fn toggle_profile(
+    paths: &AppPaths,
+    name: &str,
+    platform_id: &str,
+    enable: bool,
+) -> Result<()> {
+    validate_name(name, "name")?;
+    validate_name(platform_id, "platform")?;
+    let package_dir = paths.packages_dir.join(name);
+    let state_path = paths.packages_dir.join("state.json");
+    let repo_dir = package_dir.join("repo");
+    let manifest_path = package_dir.join("manifest.json");
+
+    if !manifest_path.exists() {
+        anyhow::bail!("Package not found");
+    }
+
+    let mut manifest: PackageManifest =
+        serde_json::from_str(&fs::read_to_string(&manifest_path)?)?;
+
+    let home = dirs::home_dir()
+        .ok_or_else(|| anyhow::anyhow!("Cannot determine home directory"))?;
+
+    if enable {
+        symlinker::enable_platform(name, &repo_dir, platform_id, "profile", None, &state_path)?;
+
+        if let Some(state) = manifest.enabled.get_mut(platform_id) {
+            state.profile = true;
+        }
+    } else {
+        symlinker::disable_platform_scope(name, platform_id, &home, &state_path)?;
+
+        if let Some(state) = manifest.enabled.get_mut(platform_id) {
+            state.profile = false;
+        }
+    }
+
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&manifest_path, json)?;
+
+    Ok(())
+}
+
+/// Check which installed packages have updates available on the remote.
+/// Returns a list of package names where the remote HEAD differs from the local HEAD.
+pub fn check_for_updates(paths: &AppPaths) -> Result<Vec<String>> {
+    let packages = list_packages(paths)?;
+    let mut updates = Vec::new();
+
+    for pkg in &packages {
+        let repo_dir = paths.packages_dir.join(&pkg.name).join("repo");
+        if !repo_dir.exists() {
+            continue;
+        }
+
+        // Get local HEAD sha
+        let local = Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .current_dir(&repo_dir)
+            .output();
+
+        let local_sha = match local {
+            Ok(out) if out.status.success() => {
+                String::from_utf8_lossy(&out.stdout).trim().to_string()
+            }
+            _ => continue,
+        };
+
+        // Get remote HEAD sha via ls-remote (no fetch needed)
+        let remote = Command::new("git")
+            .args(["ls-remote", "origin", "HEAD"])
+            .current_dir(&repo_dir)
+            .output();
+
+        let remote_sha = match remote {
+            Ok(out) if out.status.success() => {
+                let line = String::from_utf8_lossy(&out.stdout);
+                line.split_whitespace().next().unwrap_or("").to_string()
+            }
+            _ => continue,
+        };
+
+        if !remote_sha.is_empty() && remote_sha != local_sha {
+            updates.push(pkg.name.clone());
+        }
+    }
+
+    Ok(updates)
 }
 
 /// Read the manifest for a single installed package.

@@ -10,12 +10,20 @@ export interface PackageManifest {
 }
 
 export interface PlatformState {
-  scope: string;
-  project_path: string | null;
+  profile: boolean;
+  projects: string[];
+}
+
+export interface SkillInfo {
+  name: string;
+  description: string;
+  file_path: string;
+  size_bytes: number;
+  has_frontmatter: boolean;
 }
 
 export interface PackageComponents {
-  skills: string[];
+  skills: SkillInfo[];
   mcp_servers: string[];
   instructions: boolean;
   hooks: string[];

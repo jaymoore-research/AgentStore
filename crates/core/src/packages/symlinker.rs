@@ -227,6 +227,33 @@ pub fn disable_platform(
     Ok(removed)
 }
 
+/// Disable a package for a specific platform and scope.
+/// Only removes symlinks whose targets live under the given root path.
+pub fn disable_platform_scope(
+    package_name: &str,
+    platform_id: &str,
+    scope_root: &Path,
+    state_path: &Path,
+) -> Result<usize> {
+    let mut state = SymlinkState::load(state_path);
+
+    let (to_remove, to_keep): (Vec<_>, Vec<_>) = state.symlinks.into_iter().partition(|s| {
+        s.package == package_name && s.platform == platform_id && s.target.starts_with(scope_root)
+    });
+
+    let removed = to_remove.len();
+    for entry in &to_remove {
+        if entry.target.is_symlink() || entry.target.exists() {
+            let _ = remove_symlink(&entry.target);
+        }
+    }
+
+    state.symlinks = to_keep;
+    state.save(state_path)?;
+
+    Ok(removed)
+}
+
 /// Remove all symlinks for a package across all platforms.
 pub fn disable_all(package_name: &str, state_path: &Path) -> Result<usize> {
     let mut state = SymlinkState::load(state_path);

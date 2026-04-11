@@ -369,6 +369,16 @@ body::before {
   font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
+.view-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.view-title-row .view-title {
+  margin-bottom: 0;
+}
+
 .meta-tag-interactive {
   cursor: pointer;
   transition: all 160ms ease;
@@ -379,33 +389,82 @@ body::before {
   color: var(--accent);
 }
 
+.skills-dropdown {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 6px;
+  padding-top: 8px;
+}
+.skills-search {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  outline: none;
+}
+.skills-search:focus {
+  border-color: var(--accent);
+}
 .skills-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-subtle);
-  margin-top: 4px;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
 }
-
-.skill-chip {
-  font-size: 11px;
-  padding: 3px 10px;
-  background: var(--accent-subtle);
-  border: 1px solid rgba(232, 132, 74, 0.2);
-  border-radius: 10px;
-  color: var(--accent);
-  font-family: 'SF Mono', 'Fira Code', monospace;
-}
-
-.skill-chip-interactive {
+.skill-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 8px;
+  border: none;
+  background: none;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 160ms ease;
+  text-align: left;
+  transition: background 120ms ease;
 }
-.skill-chip-interactive:hover {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
+.skill-item:hover {
+  background: var(--accent-subtle);
+}
+.skill-item-name {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.skill-item-desc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 24px 0;
+}
+.btn-back {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 10px;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.btn-back:hover {
+  background: var(--bg-elevated);
+  border-color: var(--text-tertiary);
 }
 
 /* ===================== DOC MODAL ===================== */
@@ -694,6 +753,76 @@ body::before {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.settings-dialog {
+  overflow-y: hidden;
+  padding-bottom: 0;
+}
+.settings-dialog-body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 4px;
+}
+.settings-dialog-footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ===================== SCOPE ===================== */
+.profile-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.profile-toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* ===================== PROJECT LIST ===================== */
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.project-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+.project-path {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-remove {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.project-remove:hover {
+  color: var(--danger);
 }
 
 .dialog-title {
