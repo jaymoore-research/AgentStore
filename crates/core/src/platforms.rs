@@ -78,6 +78,30 @@ pub fn all_platforms() -> Vec<Platform> {
                 "opencode.json".into(),
             ],
         },
+        Platform {
+            id: "gemini".into(),
+            name: "Gemini CLI".into(),
+            skills_dir: ".gemini/skills".into(),
+            instructions_file: Some("GEMINI.md".into()),
+            mcp_config: None,
+            settings_file: None,
+            repo_markers: vec![
+                "GEMINI.md".into(),
+                ".gemini".into(),
+            ],
+        },
+        Platform {
+            id: "vscode".into(),
+            name: "VS Code".into(),
+            skills_dir: ".vscode/skills".into(),
+            instructions_file: Some(".github/copilot-instructions.md".into()),
+            mcp_config: Some(".vscode/mcp.json".into()),
+            settings_file: Some(".vscode/settings.json".into()),
+            repo_markers: vec![
+                ".vscode".into(),
+                ".github/copilot-instructions.md".into(),
+            ],
+        },
     ]
 }
 

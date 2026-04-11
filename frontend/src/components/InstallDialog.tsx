@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { PackageManifest } from "../types";
 
-const PLATFORMS = ["claude", "cursor", "windsurf", "vscode"];
+const PLATFORMS = ["claude", "codex", "copilot", "gemini", "cursor", "opencode", "vscode"];
 
 interface Props {
   onClose: () => void;

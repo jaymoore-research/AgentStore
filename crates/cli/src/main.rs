@@ -257,10 +257,12 @@ fn cmd_platforms(json: bool) -> Result<()> {
 
     let checks: Vec<(&str, &str, std::path::PathBuf)> = vec![
         ("claude", "Claude Code", home.join(".claude")),
-        ("cursor", "Cursor", home.join(".cursor")),
-        ("copilot", "GitHub Copilot", config_dir.join("github-copilot")),
         ("codex", "Codex", home.join(".codex")),
+        ("copilot", "GitHub Copilot", config_dir.join("github-copilot")),
+        ("gemini", "Gemini CLI", home.join(".gemini")),
+        ("cursor", "Cursor", home.join(".cursor")),
         ("opencode", "OpenCode", config_dir.join("opencode")),
+        ("vscode", "VS Code", home.join(".vscode")),
     ];
 
     #[derive(serde::Serialize)]
@@ -341,10 +343,12 @@ fn detect_active_platforms() -> Vec<String> {
 
     let checks: &[(&str, std::path::PathBuf)] = &[
         ("claude", home.join(".claude")),
-        ("cursor", home.join(".cursor")),
-        ("copilot", config_dir.join("github-copilot")),
         ("codex", home.join(".codex")),
+        ("copilot", config_dir.join("github-copilot")),
+        ("gemini", home.join(".gemini")),
+        ("cursor", home.join(".cursor")),
         ("opencode", config_dir.join("opencode")),
+        ("vscode", home.join(".vscode")),
     ];
 
     checks

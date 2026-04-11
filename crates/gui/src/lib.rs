@@ -65,30 +65,35 @@ fn set_config(paths: State<AppPaths>, config: AppConfig) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn install_package(
+async fn install_package(
     app: AppHandle,
     owner: String,
     name: String,
     enable_platforms: Vec<String>,
     scope: String,
     project_path: Option<String>,
-    paths: State<AppPaths>,
+    paths: State<'_, AppPaths>,
 ) -> Result<PackageManifest, String> {
+    let paths = paths.inner().clone();
     let app_clone = app.clone();
-    packages::install_package(
-        &paths,
-        &owner,
-        &name,
-        None,
-        0,
-        &enable_platforms,
-        &scope,
-        project_path.as_deref(),
-        move |step, detail, progress| {
-            emit_progress(&app_clone, step, detail, progress);
-        },
-    )
-    .map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || {
+        packages::install_package(
+            &paths,
+            &owner,
+            &name,
+            None,
+            0,
+            &enable_platforms,
+            &scope,
+            project_path.as_deref(),
+            move |step, detail, progress| {
+                emit_progress(&app_clone, step, detail, progress);
+            },
+        )
+        .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -115,21 +120,37 @@ fn toggle_platform(
 }
 
 #[tauri::command]
-fn update_package(
+async fn update_package(
     app: AppHandle,
     name: String,
-    paths: State<AppPaths>,
+    paths: State<'_, AppPaths>,
 ) -> Result<PackageManifest, String> {
+    let paths = paths.inner().clone();
     let app_clone = app.clone();
-    packages::update_package(&paths, &name, move |step, detail, progress| {
-        emit_progress(&app_clone, step, detail, progress);
+    tauri::async_runtime::spawn_blocking(move || {
+        packages::update_package(&paths, &name, move |step, detail, progress| {
+            emit_progress(&app_clone, step, detail, progress);
+        })
+        .map_err(|e| e.to_string())
     })
-    .map_err(|e| e.to_string())
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
 fn get_package_info(name: String, paths: State<AppPaths>) -> Result<PackageManifest, String> {
     packages::get_package_info(&paths, &name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn read_package_file(name: String, rel_path: String, paths: State<AppPaths>) -> Result<String, String> {
+    packages::validate_name(&name, "name").map_err(|e| e.to_string())?;
+    // Prevent path traversal in rel_path
+    if rel_path.contains("..") {
+        return Err("Invalid path".into());
+    }
+    let file = paths.packages_dir.join(&name).join("repo").join(&rel_path);
+    std::fs::read_to_string(&file).map_err(|e| format!("Cannot read {}: {}", rel_path, e))
 }
 
 #[tauri::command]
@@ -162,6 +183,7 @@ pub fn run() {
             toggle_platform,
             update_package,
             get_package_info,
+            read_package_file,
             scan_installed_skills,
         ])
         .run(tauri::generate_context!())

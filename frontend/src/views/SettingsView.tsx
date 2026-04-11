@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { AppConfig } from "../types";
 
-const PLATFORMS = ["claude", "cursor", "windsurf", "vscode"];
+const PLATFORMS = ["claude", "codex", "copilot", "gemini", "cursor", "opencode", "vscode"];
 
 export default function SettingsView() {
   const [config, setConfig] = useState<AppConfig | null>(null);

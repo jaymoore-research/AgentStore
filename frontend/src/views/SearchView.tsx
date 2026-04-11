@@ -14,9 +14,10 @@ interface SearchResult {
 
 interface Props {
   onInstall: (repo: string) => void;
+  installedRepos: Set<string>;
 }
 
-export default function SearchView({ onInstall }: Props) {
+export default function SearchView({ onInstall, installedRepos }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -160,12 +161,21 @@ export default function SearchView({ onInstall }: Props) {
               >
                 View on GitHub
               </a>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => onInstall(repo.full_name)}
-              >
-                Install
-              </button>
+              {installedRepos.has(repo.full_name.toLowerCase()) ? (
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => onInstall(repo.full_name)}
+                >
+                  Update
+                </button>
+              ) : (
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => onInstall(repo.full_name)}
+                >
+                  Install
+                </button>
+              )}
             </div>
           </div>
         ))}

@@ -24,8 +24,12 @@ pub struct SkillInfo {
 /// Candidate skill directories, in priority order.
 static SKILL_DIRS: &[&str] = &[
     ".claude/skills",
+    ".codex/skills",
     ".github/skills",
+    ".gemini/skills",
     ".cursor/skills",
+    ".opencode/skills",
+    ".vscode/skills",
     "skills",
 ];
 
@@ -210,7 +214,7 @@ fn first_paragraph(content: &str) -> String {
 // ---------------------------------------------------------------------------
 
 fn has_instruction_files(repo_dir: &Path) -> bool {
-    let files = ["CLAUDE.md", "AGENTS.md", ".cursorrules", "COPILOT.md", "WINDSURF.md"];
+    let files = ["CLAUDE.md", "AGENTS.md", ".cursorrules", "COPILOT.md", "GEMINI.md"];
     files.iter().any(|f| repo_dir.join(f).exists())
 }
 
@@ -241,17 +245,23 @@ fn detect_platforms(repo_dir: &Path) -> Vec<String> {
     if repo_dir.join(".claude").is_dir() || repo_dir.join("CLAUDE.md").exists() {
         platforms.push("Claude Code".to_string());
     }
-    if repo_dir.join(".cursor").is_dir() || repo_dir.join(".cursorrules").exists() {
-        platforms.push("Cursor".to_string());
+    if repo_dir.join(".codex").is_dir() || repo_dir.join("AGENTS.md").exists() {
+        platforms.push("Codex".to_string());
     }
     if repo_dir.join(".github/copilot").is_dir() || repo_dir.join("COPILOT.md").exists() {
         platforms.push("Copilot".to_string());
     }
-    if repo_dir.join(".codex").is_dir() || repo_dir.join("AGENTS.md").exists() {
-        platforms.push("Codex".to_string());
+    if repo_dir.join(".gemini").is_dir() || repo_dir.join("GEMINI.md").exists() {
+        platforms.push("Gemini CLI".to_string());
     }
-    if repo_dir.join(".windsurf").is_dir() || repo_dir.join("WINDSURF.md").exists() {
-        platforms.push("Windsurf".to_string());
+    if repo_dir.join(".cursor").is_dir() || repo_dir.join(".cursorrules").exists() {
+        platforms.push("Cursor".to_string());
+    }
+    if repo_dir.join(".opencode").is_dir() || repo_dir.join("opencode.json").exists() {
+        platforms.push("OpenCode".to_string());
+    }
+    if repo_dir.join(".vscode").is_dir() {
+        platforms.push("VS Code".to_string());
     }
 
     // Generic: if skills/ root exists and nothing else matched, note it's platform-agnostic
