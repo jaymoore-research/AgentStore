@@ -78,6 +78,3 @@ No signing needed. The AppImage works directly.
 - `crates/gui`: Tauri desktop app wrapper
 - `frontend`: React UI and Tauri bindings
 
-## License
-
-MIT
