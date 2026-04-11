@@ -599,7 +599,7 @@
       <nav class="header-nav">
         <a class="nav-link" href="#downloads">Downloads</a>
         <a class="nav-link" href="#cli">CLI</a>
-        <a class="nav-link" href="#skill">Skill</a>
+        <a class="nav-link" href="#skill">Get started</a>
         <a class="nav-link" href="#tools">Tools</a>
         <a class="nav-button" href="https://github.com/jaymoore-research/AgentStore">GitHub</a>
       </nav>
@@ -702,29 +702,35 @@
       </section>
 
       <section class="skill-section" id="skill">
-        <h2>Try the skill right now</h2>
+        <h2>Get started</h2>
         <p class="section-subtitle">
-          Copy this skill into your <code>.claude/skills/</code> directory and use <code>/agentstore</code> to install packages without leaving your editor.
+          Your first install: AgentStore's own skill. This gives every connected tool a <code>/agentstore</code> command to manage packages without leaving your editor.
         </p>
+
+        <div class="install-method" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.10);margin-bottom:20px;">
+          <div class="install-method-label" style="color:rgba(255,255,255,0.45);">Install the agentstore skill</div>
+          <div class="install-cmd">
+            <code>agentstore install jaymoore-research/AgentStore</code>
+            <button class="copy-cmd" onclick="copyCmd(this, 'agentstore install jaymoore-research/AgentStore')">Copy</button>
+          </div>
+          <p class="install-note" style="color:rgba(255,255,255,0.4);">
+            Detects your tools automatically. Skills are symlinked into Claude Code, Cursor, Copilot, Codex, and OpenCode.
+          </p>
+        </div>
 
         <div class="skill-file">
           <div class="skill-file-header">
-            <span>.claude/skills/agentstore/agentstore.md</span>
-            <button class="copy-btn" onclick="copySkill()">Copy skill</button>
+            <span>What gets installed</span>
           </div>
           <div class="skill-file-body" id="skill-content"><span class="fm-delim">---</span>
 <span class="fm-key">name:</span> <span class="fm-val">agentstore</span>
-<span class="fm-key">description:</span> <span class="fm-val">Manage AI agent packages via the AgentStore CLI. Install, uninstall, update, and scan packages across Claude Code, Cursor, Copilot, Codex, and OpenCode.</span>
+<span class="fm-key">description:</span> <span class="fm-val">Manage AI agent packages via the AgentStore CLI.</span>
 <span class="fm-delim">---</span>
 
 <span class="sk-heading"># AgentStore CLI</span>
 
-Package manager for AI agent skills. Installs GitHub repos as packages, creates symlinks into each platform's skill directory, and tracks ownership so packages can be cleanly updated or removed.
-
-<span class="sk-heading">## Quick start</span>
-
 <span class="sk-muted"># Install a package from GitHub</span>
-<span class="sk-code">agentstore install owner/repo --platform claude,cursor</span>
+<span class="sk-code">agentstore install owner/repo</span>
 
 <span class="sk-muted"># List installed packages</span>
 <span class="sk-code">agentstore list</span>
@@ -732,22 +738,8 @@ Package manager for AI agent skills. Installs GitHub repos as packages, creates 
 <span class="sk-muted"># Update a package</span>
 <span class="sk-code">agentstore update &lt;name&gt;</span>
 
-<span class="sk-muted"># Scan system for all skills (managed and unmanaged)</span>
-<span class="sk-code">agentstore scan</span>
-
-<span class="sk-muted"># Show detected platforms</span>
-<span class="sk-code">agentstore platforms</span></div>
-        </div>
-
-        <div class="skill-instructions">
-          <div class="skill-instruction">
-            <h3>Save it</h3>
-            <p>Create <code>~/.claude/skills/agentstore/agentstore.md</code> and paste the skill content.</p>
-          </div>
-          <div class="skill-instruction">
-            <h3>Use it</h3>
-            <p>Type <code>/agentstore</code> in Claude Code and ask it to install a package for you.</p>
-          </div>
+<span class="sk-muted"># Scan all skills on the system</span>
+<span class="sk-code">agentstore scan</span></div>
         </div>
       </section>
 
