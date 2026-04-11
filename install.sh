@@ -99,7 +99,7 @@ install_gui() {
   curl -fsSL "$DMG_URL" -o "$DMG_PATH"
 
   echo "Mounting DMG..."
-  MOUNT_POINT=$(hdiutil attach "$DMG_PATH" -nobrowse -noautoopen | grep "/Volumes" | awk '{print $NF}')
+  MOUNT_POINT=$(hdiutil attach "$DMG_PATH" -nobrowse -noautoopen | grep "/Volumes/" | sed 's/.*\/Volumes\//\/Volumes\//')
 
   APP_SRC=$(find "$MOUNT_POINT" -maxdepth 1 -name "*.app" | head -1)
   if [ -z "$APP_SRC" ]; then
