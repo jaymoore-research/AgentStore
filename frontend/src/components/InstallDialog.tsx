@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import type { PackageManifest } from "../types";
 
 const PLATFORMS = ["claude", "codex", "copilot", "gemini", "cursor", "opencode", "vscode"];
@@ -19,13 +20,16 @@ export default function InstallDialog({ onClose, prefillRepo }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const saved = localStorage.getItem("agentstore:selected-platforms");
+    const remembered: Record<string, boolean> | null = saved ? JSON.parse(saved) : null;
+
     const checks: Promise<void>[] = PLATFORMS.map(async (p) => {
       try {
         const available = await invoke<boolean>("check_platform_dir", { platformId: p });
         setPlatformAvailable((prev) => ({ ...prev, [p]: available }));
-        if (available) {
-          setSelectedPlatforms((prev) => ({ ...prev, [p]: true }));
-        }
+        // Use remembered preference if it exists, otherwise default to all detected
+        const shouldSelect = remembered ? !!remembered[p] && available : available;
+        setSelectedPlatforms((prev) => ({ ...prev, [p]: shouldSelect }));
       } catch {
         setPlatformAvailable((prev) => ({ ...prev, [p]: false }));
       }
@@ -34,7 +38,11 @@ export default function InstallDialog({ onClose, prefillRepo }: Props) {
   }, []);
 
   function togglePlatform(platform: string) {
-    setSelectedPlatforms((prev) => ({ ...prev, [platform]: !prev[platform] }));
+    setSelectedPlatforms((prev) => {
+      const next = { ...prev, [platform]: !prev[platform] };
+      localStorage.setItem("agentstore:selected-platforms", JSON.stringify(next));
+      return next;
+    });
   }
 
   async function handleInstall() {
@@ -58,6 +66,7 @@ export default function InstallDialog({ onClose, prefillRepo }: Props) {
         scope,
         projectPath: scope === "project" ? projectPath : null,
       });
+      localStorage.setItem("agentstore:selected-platforms", JSON.stringify(selectedPlatforms));
       onClose();
     } catch (e) {
       setError(String(e));
@@ -119,13 +128,32 @@ export default function InstallDialog({ onClose, prefillRepo }: Props) {
         {scope === "project" && (
           <label className="form-label">
             Project path
-            <input
-              className="form-input"
-              type="text"
-              placeholder="/path/to/project"
-              value={projectPath}
-              onChange={(e) => setProjectPath(e.target.value)}
-            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                className="form-input"
+                type="text"
+                placeholder="/path/to/project"
+                value={projectPath}
+                readOnly
+                style={{ flex: 1 }}
+              />
+              <button
+                className="btn btn-secondary"
+                type="button"
+                onClick={async () => {
+                  try {
+                    const selected = await open({
+                      directory: true,
+                      multiple: false,
+                      title: "Select project directory",
+                    });
+                    if (selected) setProjectPath(selected as string);
+                  } catch { /* user cancelled */ }
+                }}
+              >
+                Browse
+              </button>
+            </div>
           </label>
         )}
 

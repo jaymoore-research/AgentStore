@@ -452,6 +452,161 @@ mod tests {
     }
 
     #[test]
+    fn enable_platform_creates_symlinks() {
+        let tmp = TempDir::new().unwrap();
+        let state_path = tmp.path().join("state.json");
+
+        // Build a fake package dir with a skill for the "claude" platform.
+        // claude's skills_dir is ".claude/skills", so the source must be at
+        // <package_dir>/.claude/skills/<skill_name>/
+        let package_dir = tmp.path().join("pkg");
+        let skill_source = package_dir.join(".claude/skills/my-skill");
+        fs::create_dir_all(&skill_source).unwrap();
+        fs::write(skill_source.join("prompt.md"), "test skill").unwrap();
+
+        // The scope_root acts as HOME; enable_platform resolves the target
+        // as <scope_root>/.claude/skills/<skill_name>
+        let fake_home = tmp.path().join("home");
+        fs::create_dir_all(&fake_home).unwrap();
+
+        // enable_platform for profile scope calls dirs::home_dir(), which we
+        // cannot override. Use "project" scope instead, passing fake_home as
+        // the project_path so it becomes the scope_root.
+        let created = enable_platform(
+            "test-pkg",
+            &package_dir,
+            "claude",
+            "project",
+            Some(fake_home.as_path()),
+            &state_path,
+        )
+        .unwrap();
+
+        assert!(!created.is_empty(), "should create at least one symlink");
+
+        let target = fake_home.join(".claude/skills/my-skill");
+        assert!(target.is_symlink(), "target should be a symlink");
+
+        // State file should persist the entry
+        let state = SymlinkState::load(&state_path);
+        assert!(
+            state.symlinks.iter().any(|s| s.target == target),
+            "state should record the new symlink"
+        );
+    }
+
+    #[test]
+    fn enable_platform_skips_existing_unmanaged() {
+        let tmp = TempDir::new().unwrap();
+        let state_path = tmp.path().join("state.json");
+
+        // Build package source
+        let package_dir = tmp.path().join("pkg");
+        let skill_source = package_dir.join(".claude/skills/conflict-skill");
+        fs::create_dir_all(&skill_source).unwrap();
+
+        // Pre-create a real (non-symlink) directory at the target location
+        let fake_home = tmp.path().join("home");
+        let existing = fake_home.join(".claude/skills/conflict-skill");
+        fs::create_dir_all(&existing).unwrap();
+        fs::write(existing.join("user-file.md"), "user content").unwrap();
+
+        // Empty state: the directory is unmanaged
+        SymlinkState::default().save(&state_path).unwrap();
+
+        let created = enable_platform(
+            "test-pkg",
+            &package_dir,
+            "claude",
+            "project",
+            Some(fake_home.as_path()),
+            &state_path,
+        )
+        .unwrap();
+
+        // Should skip the conflicting target
+        assert!(
+            created.is_empty(),
+            "should not create symlinks when unmanaged dir exists"
+        );
+
+        // The original directory (and its contents) must be untouched
+        assert!(existing.is_dir() && !existing.is_symlink());
+        assert!(existing.join("user-file.md").exists());
+    }
+
+    #[test]
+    fn disable_platform_scope_only_removes_matching() {
+        let tmp = TempDir::new().unwrap();
+        let state_path = tmp.path().join("state.json");
+
+        let profile_root = tmp.path().join("home");
+        let project_root = tmp.path().join("project");
+
+        // Create symlinks for both scopes
+        let src_a = tmp.path().join("src-a");
+        let src_b = tmp.path().join("src-b");
+        fs::create_dir_all(&src_a).unwrap();
+        fs::create_dir_all(&src_b).unwrap();
+
+        let target_profile = profile_root.join(".claude/skills/my-skill");
+        let target_project = project_root.join(".claude/skills/my-skill");
+        fs::create_dir_all(target_profile.parent().unwrap()).unwrap();
+        fs::create_dir_all(target_project.parent().unwrap()).unwrap();
+        create_symlink(&src_a, &target_profile).unwrap();
+        create_symlink(&src_b, &target_project).unwrap();
+
+        let state = SymlinkState {
+            symlinks: vec![
+                SymlinkEntry {
+                    package: "pkg".into(),
+                    source: src_a.clone(),
+                    target: target_profile.clone(),
+                    platform: "claude".into(),
+                    scope: "profile".into(),
+                    component: "skill".into(),
+                },
+                SymlinkEntry {
+                    package: "pkg".into(),
+                    source: src_b.clone(),
+                    target: target_project.clone(),
+                    platform: "claude".into(),
+                    scope: "project".into(),
+                    component: "skill".into(),
+                },
+            ],
+        };
+        state.save(&state_path).unwrap();
+
+        // Disable only profile scope (entries under profile_root)
+        let removed = disable_platform_scope("pkg", "claude", &profile_root, &state_path).unwrap();
+        assert_eq!(removed, 1);
+        assert!(!target_profile.exists(), "profile symlink should be removed");
+        assert!(
+            target_project.is_symlink(),
+            "project symlink should remain"
+        );
+
+        let state_after = SymlinkState::load(&state_path);
+        assert_eq!(state_after.symlinks.len(), 1);
+        assert_eq!(state_after.symlinks[0].scope, "project");
+    }
+
+    #[test]
+    fn corrupt_state_file_loads_as_empty() {
+        let tmp = TempDir::new().unwrap();
+        let state_path = tmp.path().join("state.json");
+
+        fs::write(&state_path, "{{not valid json!!!").unwrap();
+
+        let state = SymlinkState::load(&state_path);
+        assert!(
+            state.symlinks.is_empty(),
+            "corrupt state should fall back to empty default"
+        );
+    }
+
+    #[test]
     fn state_round_trips() {
         let tmp = TempDir::new().unwrap();
         let state_path = tmp.path().join("state.json");

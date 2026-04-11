@@ -229,7 +229,7 @@ export default function InstalledView() {
   function getProjects(pkg: PackageManifest): string[] {
     const all = new Set<string>();
     for (const state of Object.values(pkg.enabled)) {
-      for (const p of state.projects) {
+      for (const p of state.projects ?? []) {
         all.add(p);
       }
     }
@@ -289,6 +289,13 @@ export default function InstalledView() {
                     onClick={() => { setSettingsView("main"); setSettingsModal(pkg); }}
                   >
                     Settings
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleUninstall(pkg.name)}
+                    disabled={uninstalling === pkg.name}
+                  >
+                    {uninstalling === pkg.name ? "Removing..." : "Uninstall"}
                   </button>
                 </div>
               </div>

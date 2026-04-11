@@ -30,7 +30,7 @@ pub struct PackageManifest {
 #[derive(Debug, Clone, Serialize)]
 pub struct PlatformState {
     pub profile: bool,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub projects: Vec<String>,
 }
 
@@ -805,5 +805,81 @@ mod tests {
         assert!(validate_name("rëpo", "name").is_err());
         assert!(validate_name("名前", "name").is_err());
         assert!(validate_name("repo\u{200B}", "name").is_err()); // zero-width space
+    }
+
+    #[test]
+    fn manifest_with_legacy_platform_state_deserializes() {
+        let json = r#"{"scope": "profile", "project_path": null}"#;
+        let state: PlatformState = serde_json::from_str(json).unwrap();
+        assert!(state.profile, "legacy profile scope should map to profile=true");
+        assert!(state.projects.is_empty());
+    }
+
+    #[test]
+    fn manifest_with_new_platform_state_deserializes() {
+        let json = r#"{"profile": true, "projects": []}"#;
+        let state: PlatformState = serde_json::from_str(json).unwrap();
+        assert!(state.profile);
+        assert!(state.projects.is_empty());
+
+        // Also test with projects populated
+        let json2 = r#"{"profile": false, "projects": ["/home/user/proj"]}"#;
+        let state2: PlatformState = serde_json::from_str(json2).unwrap();
+        assert!(!state2.profile);
+        assert_eq!(state2.projects, vec!["/home/user/proj"]);
+    }
+
+    #[test]
+    fn legacy_project_scope_deserializes_with_path() {
+        let json = r#"{"scope": "project", "project_path": "/tmp/my-project"}"#;
+        let state: PlatformState = serde_json::from_str(json).unwrap();
+        assert!(!state.profile, "project scope should map to profile=false");
+        assert_eq!(state.projects, vec!["/tmp/my-project"]);
+    }
+
+    #[test]
+    fn components_with_string_skills_deserializes() {
+        let json = r#"{
+            "skills": ["review", "ship"],
+            "mcp_servers": [],
+            "instructions": false,
+            "hooks": [],
+            "keybindings": []
+        }"#;
+        let components: PackageComponents = serde_json::from_str(json).unwrap();
+        assert_eq!(components.skills.len(), 2);
+        assert_eq!(components.skills[0].name, "review");
+        assert_eq!(components.skills[1].name, "ship");
+        // Old format skills get empty description and file_path
+        assert!(components.skills[0].description.is_empty());
+        assert_eq!(components.skills[0].size_bytes, 0);
+    }
+
+    #[test]
+    fn components_with_skill_info_deserializes() {
+        let json = r#"{
+            "skills": [
+                {
+                    "name": "review",
+                    "description": "Code review skill",
+                    "file_path": ".claude/skills/review",
+                    "size_bytes": 1234,
+                    "has_frontmatter": true
+                }
+            ],
+            "mcp_servers": ["sqlite"],
+            "instructions": true,
+            "hooks": [],
+            "keybindings": []
+        }"#;
+        let components: PackageComponents = serde_json::from_str(json).unwrap();
+        assert_eq!(components.skills.len(), 1);
+        assert_eq!(components.skills[0].name, "review");
+        assert_eq!(components.skills[0].description, "Code review skill");
+        assert_eq!(components.skills[0].file_path, ".claude/skills/review");
+        assert_eq!(components.skills[0].size_bytes, 1234);
+        assert!(components.skills[0].has_frontmatter);
+        assert_eq!(components.mcp_servers, vec!["sqlite"]);
+        assert!(components.instructions);
     }
 }
