@@ -26,6 +26,12 @@ export default function Sidebar({ installRepo, onInstallClose }: Props) {
           end
           className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
         >
+          About
+        </NavLink>
+        <NavLink
+          to="/browse"
+          className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+        >
           Browse
         </NavLink>
         <NavLink

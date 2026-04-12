@@ -1124,6 +1124,103 @@ a.btn {
   }
 }
 
+/* ===================== ABOUT ===================== */
+.about-banner {
+  background: var(--accent-subtle);
+  border: 1px solid rgba(232, 132, 74, 0.2);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.about-banner-content {
+  flex: 1;
+}
+.about-banner-content strong {
+  font-size: 14px;
+  color: var(--accent-hover);
+}
+.about-banner-content p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.about-banner-content code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  background: rgba(232, 132, 74, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--accent-hover);
+}
+.about-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.about-section {
+  margin-bottom: 32px;
+}
+.about-heading {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+.about-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 640px;
+  margin-bottom: 20px;
+}
+.about-diagram {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px 16px;
+  overflow-x: auto;
+}
+.about-svg {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.about-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.about-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--card-shadow);
+}
+.about-card-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+.about-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.about-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
 @media (max-width: 720px) {
   .package-header {
     flex-direction: column;

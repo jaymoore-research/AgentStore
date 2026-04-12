@@ -6,12 +6,18 @@ import Sidebar from "./components/Sidebar";
 import SearchView from "./views/SearchView";
 import InstalledView from "./views/InstalledView";
 import SettingsView from "./views/SettingsView";
+import AboutView from "./views/AboutView";
 import type { InstallProgress, PackageManifest } from "./types";
 
 export default function App() {
   const [installProgress, setInstallProgress] = useState<InstallProgress | null>(null);
   const [installRepo, setInstallRepo] = useState<string | null>(null);
   const [installedRepos, setInstalledRepos] = useState<Set<string>>(new Set());
+  const [bannerDismissed, setBannerDismissed] = useState(
+    () => localStorage.getItem("agentstore:banner-dismissed") === "1"
+  );
+
+  const agentstoreInstalled = installedRepos.has("jaymoore-research/agentstore");
 
   const refreshInstalled = useCallback(async () => {
     try {
@@ -39,6 +45,11 @@ export default function App() {
     };
   }, [refreshInstalled]);
 
+  function dismissBanner() {
+    setBannerDismissed(true);
+    localStorage.setItem("agentstore:banner-dismissed", "1");
+  }
+
   return (
     <div className="app-layout">
       <Sidebar
@@ -46,6 +57,34 @@ export default function App() {
         onInstallClose={() => setInstallRepo(null)}
       />
       <main className="main-content">
+        {/* Global get-started banner */}
+        {!bannerDismissed && !agentstoreInstalled && (
+          <div className="about-banner" style={{ margin: "0 0 16px" }}>
+            <div className="about-banner-content">
+              <strong>Get started</strong>
+              <p>
+                Install the AgentStore skill pack to add <code>agentstore</code> as a
+                skill in your AI coding tools, so you can install and manage packages
+                from inside your editor.
+              </p>
+            </div>
+            <div className="about-banner-actions">
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => setInstallRepo("jaymoore-research/AgentStore")}
+              >
+                Install AgentStore skill
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={dismissBanner}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         {installProgress && (
           <div className="progress-bar">
             <div
@@ -58,7 +97,8 @@ export default function App() {
           </div>
         )}
         <Routes>
-          <Route path="/" element={<SearchView onInstall={(repo) => setInstallRepo(repo)} installedRepos={installedRepos} />} />
+          <Route path="/" element={<AboutView />} />
+          <Route path="/browse" element={<SearchView onInstall={(repo) => setInstallRepo(repo)} installedRepos={installedRepos} />} />
           <Route path="/installed" element={<InstalledView />} />
           <Route path="/settings" element={<SettingsView />} />
         </Routes>

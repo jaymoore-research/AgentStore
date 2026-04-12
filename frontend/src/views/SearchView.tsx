@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface SearchResult {
   full_name: string;
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function SearchView({ onInstall, installedRepos }: Props) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -164,9 +166,9 @@ export default function SearchView({ onInstall, installedRepos }: Props) {
               {installedRepos.has(repo.full_name.toLowerCase()) ? (
                 <button
                   className="btn btn-secondary btn-sm"
-                  onClick={() => onInstall(repo.full_name)}
+                  onClick={() => navigate("/installed")}
                 >
-                  Update
+                  Installed
                 </button>
               ) : (
                 <button
