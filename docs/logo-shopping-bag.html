@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Agent Store — Shopping Bag Variants</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #faf8f5; color: #1a1a1a; margin: 0; padding: 48px; }
+  h1 { margin: 0 0 8px; }
+  p.sub { color: #666; margin: 0 0 40px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+  .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #eee; }
+  .swatch { display: flex; align-items: center; justify-content: center; height: 180px; border-radius: 12px; background: #fafafa; }
+  .swatch.dark { background: #1a1a1a; }
+  h3 { margin: 14px 0 4px; font-size: 14px; }
+  p { margin: 0; font-size: 12px; color: #666; }
+  .sizes { display: flex; gap: 10px; align-items: center; margin-top: 32px; padding: 20px; background: #fff; border-radius: 14px; border: 1px solid #eee; }
+</style>
+</head>
+<body>
+  <h1>Shopping Bag — Variants</h1>
+  <p class="sub">Refinements on direction #3. Pick colour, handle style, and face treatment.</p>
+
+  <div class="grid">
+
+    <!-- A. Original purple -->
+    <div class="card">
+      <div class="swatch">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <path d="M45 40 a25 25 0 0 1 50 0" stroke="#5B4B8A" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#9B87D6"/>
+          <text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text>
+        </svg>
+      </div>
+      <h3>A. Original — Purple</h3>
+      <p>Baseline from the first round.</p>
+    </div>
+
+    <!-- B. Coral warmth -->
+    <div class="card">
+      <div class="swatch">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <path d="M45 40 a25 25 0 0 1 50 0" stroke="#C84E3A" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#FF7A59"/>
+          <text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text>
+        </svg>
+      </div>
+      <h3>B. Warm Coral</h3>
+      <p>Friendlier, more inviting.</p>
+    </div>
+
+    <!-- C. Mint -->
+    <div class="card">
+      <div class="swatch">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <path d="M45 40 a25 25 0 0 1 50 0" stroke="#2F6B52" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#7AC4A8"/>
+          <text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text>
+        </svg>
+      </div>
+      <h3>C. Mint</h3>
+      <p>Fresh, App-Store-y.</p>
+    </div>
+
+    <!-- D. Gradient -->
+    <div class="card">
+      <div class="swatch">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <defs>
+            <linearGradient id="gbag" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#FF9A7A"/><stop offset="1" stop-color="#C94DA3"/>
+            </linearGradient>
+          </defs>
+          <path d="M45 40 a25 25 0 0 1 50 0" stroke="#7A2E6B" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="url(#gbag)"/>
+          <text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text>
+        </svg>
+      </div>
+      <h3>D. Sunset Gradient</h3>
+      <p>Premium consumer app feel.</p>
+    </div>
+
+    <!-- E. Ligature As -->
+    <div class="card">
+      <div class="swatch">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <path d="M45 40 a25 25 0 0 1 50 0" stroke="#C84E3A" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#FF7A59"/>
+          <text x="70" y="96" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-weight="700" font-size="44" fill="#fff">As</text>
+        </svg>
+      </div>
+      <h3>E. Serif "As"</h3>
+      <p>Softer lettering, boutique vibe.</p>
+    </div>
+
+    <!-- F. Smiley face handles -->
+    <div class="card">
+      <div class="swatch">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <path d="M45 40 a25 25 0 0 1 50 0" stroke="#C84E3A" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#FF7A59"/>
+          <circle cx="55" cy="75" r="4" fill="#fff"/>
+          <circle cx="85" cy="75" r="4" fill="#fff"/>
+          <path d="M58 95 q12 10 24 0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <text x="70" y="122" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="14" fill="#fff">AS</text>
+        </svg>
+      </div>
+      <h3>F. Bag Mascot</h3>
+      <p>AS becomes a tag; bag has a face.</p>
+    </div>
+
+    <!-- G. Dark mode -->
+    <div class="card">
+      <div class="swatch dark">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <path d="M45 40 a25 25 0 0 1 50 0" stroke="#F9C46B" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#F9C46B"/>
+          <text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#1a1a1a">AS</text>
+        </svg>
+      </div>
+      <h3>G. Gold on Dark</h3>
+      <p>Premium, works on dark titlebars.</p>
+    </div>
+
+    <!-- H. Outline -->
+    <div class="card">
+      <div class="swatch">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <path d="M45 40 a25 25 0 0 1 50 0" stroke="#1a1a1a" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#fff" stroke="#1a1a1a" stroke-width="6" stroke-linejoin="round"/>
+          <text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#1a1a1a">AS</text>
+        </svg>
+      </div>
+      <h3>H. Outline Mono</h3>
+      <p>Versatile — print, favicons, watermarks.</p>
+    </div>
+
+  </div>
+
+  <!-- Size preview of favourite -->
+  <div class="sizes">
+    <strong style="margin-right:16px; font-size:13px;">Size preview (Coral):</strong>
+    <svg width="96" height="96" viewBox="0 0 140 140"><path d="M45 40 a25 25 0 0 1 50 0" stroke="#C84E3A" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#FF7A59"/><text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text></svg>
+    <svg width="64" height="64" viewBox="0 0 140 140"><path d="M45 40 a25 25 0 0 1 50 0" stroke="#C84E3A" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#FF7A59"/><text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text></svg>
+    <svg width="32" height="32" viewBox="0 0 140 140"><path d="M45 40 a25 25 0 0 1 50 0" stroke="#C84E3A" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#FF7A59"/><text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text></svg>
+    <svg width="16" height="16" viewBox="0 0 140 140"><path d="M45 40 a25 25 0 0 1 50 0" stroke="#C84E3A" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="#FF7A59"/><text x="70" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text></svg>
+  </div>
+</body>
+</html>

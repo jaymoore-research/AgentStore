@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 140 140">
+  <defs>
+    <linearGradient id="bag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF9A7A"/>
+      <stop offset="1" stop-color="#C94DA3"/>
+    </linearGradient>
+  </defs>
+  <path d="M45 40 a25 25 0 0 1 50 0" stroke="#7A2E6B" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M28 42 h84 l-8 80 a10 10 0 0 1 -10 9 h-48 a10 10 0 0 1 -10 -9 z" fill="url(#bag)"/>
+  <text x="70" y="92" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-weight="800" font-size="32" fill="#fff">AS</text>
+</svg>
