@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import HowItWorksSteps from "../components/HowItWorksSteps";
 
 interface SearchResult {
   full_name: string;
@@ -123,6 +124,8 @@ export default function SearchView({ onInstall, installedRepos }: Props) {
       {!loading && searched && results.length === 0 && (
         <p className="search-status">No results found.</p>
       )}
+
+      {!searched && !loading && <HowItWorksSteps />}
 
       <div className="search-results">
         {results.map((repo) => (

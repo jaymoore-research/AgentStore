@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import InstallDialog from "./InstallDialog";
 
@@ -8,28 +7,19 @@ interface Props {
 }
 
 export default function Sidebar({ installRepo, onInstallClose }: Props) {
-  const [showInstall, setShowInstall] = useState(false);
-
-  const dialogOpen = showInstall || !!installRepo;
+  const dialogOpen = !!installRepo;
 
   function handleClose() {
-    setShowInstall(false);
     onInstallClose();
   }
 
   return (
     <aside className="sidebar">
-      <h1 className="sidebar-title">AgentStore</h1>
+      <NavLink to="/" className="sidebar-title">AgentStore</NavLink>
       <nav className="sidebar-nav">
         <NavLink
           to="/"
           end
-          className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-        >
-          About
-        </NavLink>
-        <NavLink
-          to="/browse"
           className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
         >
           Browse
@@ -46,10 +36,13 @@ export default function Sidebar({ installRepo, onInstallClose }: Props) {
         >
           Settings
         </NavLink>
+        <NavLink
+          to="/about"
+          className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+        >
+          About
+        </NavLink>
       </nav>
-      <button className="install-btn" onClick={() => setShowInstall(true)}>
-        + Install Package
-      </button>
       {dialogOpen && (
         <InstallDialog
           onClose={handleClose}

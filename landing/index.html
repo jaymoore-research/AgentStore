@@ -402,6 +402,16 @@
 
     .step-card h3, .tool-card h3 { font-size: 22px; }
 
+    .illustrated-steps .step-card { text-align: center; place-items: center; }
+    .step-art {
+      width: 120px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-art svg { width: 100%; height: 100%; }
+
     .tools-grid { display: grid; gap: 16px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
     .tool-card {
@@ -753,29 +763,64 @@
           </p>
         </div>
 
-        <div class="steps-grid">
+        <div class="steps-grid illustrated-steps">
           <article class="step-card">
-            <div class="step-index">01</div>
-            <h3>Point at a repo</h3>
-            <p class="download-meta">
-              Enter an owner/repo (GUI) or run <code>agentstore install owner/repo</code> (CLI). The repo is cloned locally with a shallow depth-1 fetch.
-            </p>
+            <div class="step-art">
+              <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ls1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#FF9A7A" />
+                    <stop offset="1" stop-color="#C94DA3" />
+                  </linearGradient>
+                </defs>
+                <path d="M60 14 v44 M48 48 l12 12 l12 -12" stroke="#7A2E6B" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M30 62 h60 l-4 24 a6 6 0 0 1 -6 5 h-40 a6 6 0 0 1 -6 -5 z" fill="url(#ls1)" />
+              </svg>
+            </div>
+            <h3>Install once</h3>
+            <p class="download-meta">Pull any skill pack straight from GitHub into one central folder.</p>
           </article>
 
           <article class="step-card">
-            <div class="step-index">02</div>
-            <h3>Auto-detect components</h3>
-            <p class="download-meta">
-              AgentStore scans the clone for skills, instructions, MCP servers, hooks, and keybindings. It figures out which platforms the package supports.
-            </p>
+            <div class="step-art">
+              <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ls2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#FF9A7A" />
+                    <stop offset="1" stop-color="#C94DA3" />
+                  </linearGradient>
+                </defs>
+                <circle cx="60" cy="50" r="14" fill="url(#ls2)" />
+                <circle cx="24" cy="28" r="7" fill="none" stroke="#C94DA3" stroke-width="2.5" />
+                <circle cx="24" cy="72" r="7" fill="none" stroke="#C94DA3" stroke-width="2.5" />
+                <circle cx="96" cy="28" r="7" fill="none" stroke="#FF9A7A" stroke-width="2.5" />
+                <circle cx="96" cy="72" r="7" fill="none" stroke="#FF9A7A" stroke-width="2.5" />
+                <line x1="46" y1="50" x2="31" y2="32" stroke="#C94DA3" stroke-width="1.5" stroke-dasharray="3 3" />
+                <line x1="46" y1="50" x2="31" y2="68" stroke="#C94DA3" stroke-width="1.5" stroke-dasharray="3 3" />
+                <line x1="74" y1="50" x2="89" y2="32" stroke="#FF9A7A" stroke-width="1.5" stroke-dasharray="3 3" />
+                <line x1="74" y1="50" x2="89" y2="68" stroke="#FF9A7A" stroke-width="1.5" stroke-dasharray="3 3" />
+              </svg>
+            </div>
+            <h3>Share everywhere</h3>
+            <p class="download-meta">Symlinks fan it out to every AI tool. No copies, no bloat.</p>
           </article>
 
           <article class="step-card">
-            <div class="step-index">03</div>
-            <h3>Symlink into your tools</h3>
-            <p class="download-meta">
-              One copy on disk, symlinked into Claude Code, Cursor, Copilot, Codex, and OpenCode. Toggle platforms on and off. Updates re-clone and re-link.
-            </p>
+            <div class="step-art">
+              <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ls3" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#FF9A7A" />
+                    <stop offset="1" stop-color="#C94DA3" />
+                  </linearGradient>
+                </defs>
+                <path d="M30 50 a30 30 0 1 1 14 25" stroke="url(#ls3)" stroke-width="6" fill="none" stroke-linecap="round" />
+                <path d="M30 50 l-8 -4 l4 10 z" fill="#FF9A7A" />
+                <circle cx="60" cy="50" r="6" fill="#C94DA3" />
+              </svg>
+            </div>
+            <h3>Update once</h3>
+            <p class="download-meta">Pull upstream changes and every tool sees the new version instantly.</p>
           </article>
         </div>
       </section>

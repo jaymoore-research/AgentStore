@@ -151,10 +151,19 @@ pub fn enable_platform(
 
     // Also check root-level skill files (standalone .md with frontmatter)
     // and platform-agnostic locations
-    let alt_skills_dirs = [".claude/skills", ".github/skills", ".cursor/skills"];
+    let alt_skills_dirs = [
+        ".claude/skills",
+        ".github/skills",
+        ".cursor/skills",
+        ".codex/skills",
+        ".gemini/skills",
+        ".opencode/skills",
+        ".vscode/skills",
+        "skills",
+    ];
     for alt in &alt_skills_dirs {
         let alt_path = package_dir.join(alt);
-        if alt_path.is_dir() && *alt != platform.skills_dir {
+        if alt_path.is_dir() && alt_path != source_skills {
             // Cross-platform: if package has skills for another platform,
             // link them to this platform's skills dir too
             let target_dir = resolve_path(&platform, "skills_dir", &scope_root)
@@ -493,6 +502,37 @@ mod tests {
             state.symlinks.iter().any(|s| s.target == target),
             "state should record the new symlink"
         );
+    }
+
+    #[test]
+    fn enable_platform_links_top_level_skills_dir() {
+        // Most real skill packs (superpowers, anthropics/skills, ClawBio) keep
+        // skills at plain top-level `skills/` rather than `.claude/skills/`.
+        // The symlinker must fall back to that location.
+        let tmp = TempDir::new().unwrap();
+        let state_path = tmp.path().join("state.json");
+
+        let package_dir = tmp.path().join("pkg");
+        let skill_source = package_dir.join("skills/my-skill");
+        fs::create_dir_all(&skill_source).unwrap();
+        fs::write(skill_source.join("SKILL.md"), "---\nname: my-skill\n---\n").unwrap();
+
+        let fake_home = tmp.path().join("home");
+        fs::create_dir_all(&fake_home).unwrap();
+
+        let created = enable_platform(
+            "test-pkg",
+            &package_dir,
+            "claude",
+            "project",
+            Some(fake_home.as_path()),
+            &state_path,
+        )
+        .unwrap();
+
+        assert!(!created.is_empty(), "top-level skills/ must be linked");
+        let target = fake_home.join(".claude/skills/my-skill");
+        assert!(target.is_symlink(), "target should be a symlink");
     }
 
     #[test]

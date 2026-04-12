@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
@@ -16,6 +16,8 @@ export default function App() {
   const [bannerDismissed, setBannerDismissed] = useState(
     () => localStorage.getItem("agentstore:banner-dismissed") === "1"
   );
+  const location = useLocation();
+  const onAbout = location.pathname === "/about";
 
   const agentstoreInstalled = installedRepos.has("jaymoore-research/agentstore");
 
@@ -57,31 +59,24 @@ export default function App() {
         onInstallClose={() => setInstallRepo(null)}
       />
       <main className="main-content">
-        {/* Global get-started banner */}
-        {!bannerDismissed && !agentstoreInstalled && (
-          <div className="about-banner" style={{ margin: "0 0 16px" }}>
-            <div className="about-banner-content">
-              <strong>Get started</strong>
-              <p>
-                Install the AgentStore skill pack to add <code>agentstore</code> as a
-                skill in your AI coding tools, so you can install and manage packages
-                from inside your editor.
-              </p>
-            </div>
-            <div className="about-banner-actions">
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => setInstallRepo("jaymoore-research/AgentStore")}
-              >
-                Install AgentStore skill
-              </button>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={dismissBanner}
-              >
-                Dismiss
-              </button>
-            </div>
+        {/* Compact get-started pill, top-right, hidden on About */}
+        {!bannerDismissed && !agentstoreInstalled && !onAbout && (
+          <div className="install-pill">
+            <button
+              className="install-pill-btn"
+              onClick={() => setInstallRepo("jaymoore-research/AgentStore")}
+              title="Install the AgentStore skill pack"
+            >
+              + Install AgentStore skill
+            </button>
+            <button
+              className="install-pill-dismiss"
+              onClick={dismissBanner}
+              aria-label="Dismiss"
+              title="Dismiss"
+            >
+              ×
+            </button>
           </div>
         )}
 
@@ -97,10 +92,10 @@ export default function App() {
           </div>
         )}
         <Routes>
-          <Route path="/" element={<AboutView />} />
-          <Route path="/browse" element={<SearchView onInstall={(repo) => setInstallRepo(repo)} installedRepos={installedRepos} />} />
+          <Route path="/" element={<SearchView onInstall={(repo) => setInstallRepo(repo)} installedRepos={installedRepos} />} />
           <Route path="/installed" element={<InstalledView />} />
           <Route path="/settings" element={<SettingsView />} />
+          <Route path="/about" element={<AboutView />} />
         </Routes>
       </main>
     </div>
